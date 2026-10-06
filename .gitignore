@@ -12,29 +12,27 @@ __pycache__/
 # Runtime data created by the app
 api_keys.db
 email_audit.jsonl
-lims_copilot.log
 *.log
 
-# Vector store and caches (rebuilt by running rag_pipeline.py)
+# Vector store, caches, learned corrections (rebuilt or created at runtime)
 vector_store/
+cache/
+documents/learned/
 
-# Generated reports (these can contain client data)
+# Generated output (can contain client data)
 exports/
+charts/
 *.xlsx
 *.csv
+
+# Source documents: internal, supply separately (keeps empty folders via .gitkeep)
+documents/manuals/*
+documents/schema/*
+manual_sources/*
+!.gitkeep
 
 # Editor / OS
 .vscode/
 .idea/
 .DS_Store
 Thumbs.db
-
-#Folders
-documents/learned/
-documents/manuals/
-documents/schema/
-charts/
-exports/
-manual_sources/
-cache/
-vector_store/
