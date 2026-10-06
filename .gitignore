@@ -28,3 +28,11 @@ exports/
 .idea/
 .DS_Store
 Thumbs.db
+
+#Folders
+documents/
+charts/
+exports/
+manual_sources/
+cache/
+vector_store/
