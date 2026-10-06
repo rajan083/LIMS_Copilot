@@ -30,7 +30,9 @@ exports/
 Thumbs.db
 
 #Folders
-documents/
+documents/learned/
+documents/manuals/
+documents/schema/
 charts/
 exports/
 manual_sources/
