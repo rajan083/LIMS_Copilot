@@ -1,0 +1,30 @@
+# Secrets
+.env
+.env.*
+!.env.example
+.streamlit/secrets.toml
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# Runtime data created by the app
+api_keys.db
+email_audit.jsonl
+lims_copilot.log
+*.log
+
+# Vector store and caches (rebuilt by running rag_pipeline.py)
+vector_store/
+
+# Generated reports (these can contain client data)
+exports/
+*.xlsx
+*.csv
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

@@ -1,0 +1,259 @@
+---
+type: collection
+title: el_order_test_parameter
+description: Schema reference for the MongoDB collection 'el_order_test_parameter'.
+tags:
+- schemamongodb
+- el_order_test_parameter
+field_count: 234
+---
+# Schema reference: el_order_test_parameter
+
+Auto-generated from the live database schema, a sample of stored values, and model-drafted field descriptions. Regenerate with schema_docs.refresh_schema_documents() whenever the schema or its value sets change. Use the exact backticked field name shown below when querying — descriptions are for context only.
+
+## Related collections
+
+- [el_orders](schema_el_orders.md) — linked via `order._id`
+
+## Categorical fields (known values)
+
+- `_class` (str) — Specifies the Java class mapping for the document within the application's persistence layer. Known values: com.elabs.main.models.OrderTestParameters
+- `actual_tat` (int) — Represents the number of days taken to complete the test parameter analysis in reality. Known values: 0
+- `analysis_type` (str) — Categorizes the testing approach, such as routine quality control, stability studies, or formal method validation. Known values: Method Validation, Routine Testing , Shelf Life Study, Verification Stability Study
+- `assigned_section.name` (str) — Indicates the descriptive name of the laboratory department or section responsible for this test. Known values: Adulteration test, Aflatoxins, Amino Acid Profile, Assay Parameters, Chemical, Chemical Parameters, Chemically, Description, General Parameters, Heavy Metals, Microbiological Tests, Migration Test, Organoleptic &Physical Parameter, Parameters Concerning Undesirable Substances in excess amount, Pesticide Residues, Physical Parameters, Specific Migration, Test Parameters, param cat ph
+- `branch.code` (str) — Provides the unique alphanumeric identifier for the specific laboratory branch location. Known values: BR-1, BR-2
+- `branch.name` (str) — Identifies the physical city or regional office name where the laboratory branch is situated. Known values: Baddi, Chennai, Panchkula
+- `brand` (str) — Refers to the specific commercial product name or label associated with the submitted sample. Known values: ABC, Beta Heart, Beta Heart2, Dalia Premix Sweet, Finish Product, G, GH, Gluconil Powder, H, HG, HGS, HI, HIM, JS, LUPIN, Milk & Dairy Product, NA, XYZ, abc, an, asd, bac, bca, gf, h, na, ok
+- `category.code` (str) — Stores the unique identifier for the high-level industry or product classification of the test. Known values: CT-114, CT-116, CT-120, CT-123, CT-129, CT-143, CT-147, CT-154, CT-156, CT-17, CT-174, CT-191, CT-196, CT-205, CT-216, CT-221, CT-235, CT-249, CT-271, CT-277, CT-331, CT-337, CT-345, CT-383, CT-385, CT-428
+- `category.name` (str) — Provides the descriptive label for the product category, such as bakery products or cosmetic goods. Known values: Bakery Products, Biomass & Fuel, Cereal-Pulses And Cereal Products, Cosmetic Products, Facial Cleansers, Finished Product, Fruits / Vegetable Products, Hair Care Products, Health Supplements, Material Testing, Nutraceuticals, Oil, Others, Packaged Drinking Water, Ph CAt, Raw Material, Standard Master, Technical Pesticides, Water, Whole Spices, Woven Fabric
+- `category.type` (str) — Specifies the formal classification type of the category entity within the system. Known values: CATS
+- `claim_dependent` (bool) — Indicates if the result limit or pass/fail criteria is dependent on a specific manufacturer claim. Known values: False, True
+- `condition_to_maintain` (str) — Specifies the required storage or environmental conditions, such as temperature, needed for sample integrity. Known values: 2 to 8°C, Ambient, Light Sensitive, Max -18°c, Others, new
+- `cost_rate` (float) — Defines the standard financial price charged for conducting this specific test parameter. Known values: 0.0, 1.0, 100.0, 300.0, 400.0, 500.0, 1000.0, 1500.0
+- `createdBy` (str) — Logs the email address of the system user who initially generated this record. Known values: badditester@itclims.com, deepika.sharma@itclabs.com, gaurav.thakur@e-labs.ai, himanshu.sinha@gmail.com, parvesh.parvesh@itclims.com, praveen.singh@itclabs.com, soora.kumar@itclims.com
+- `createdByName` (str) — Displays the full name of the user responsible for creating this order test parameter record. Known values: Baddi Tester, Deepika Sharma, Gaurav Kumar(IT), Himanshu Geet Sinha ( IT ), Parvesh, Praveen Singh(IT), Soora Kranthi Kumar
+- `customEntry` (bool) — A boolean flag indicating if the test parameter record was created via manual entry rather than templates. Known values: False
+- `customer_tat` (int) — Represents the committed turnaround time in days promised to the customer for this specific test. Known values: 0
+- `department.code` (str) — Contains the unique code for the overarching functional department overseeing the test. Known values: AY, BL, CS, DP-1, DP-10, DP-11, DP-12, DP-13, DP-7, EN, EW, FD, MD, NT, OT, PH, TX, WT
+- `department.name` (str) — Provides the name of the laboratory department, such as food or cosmetics, responsible for the analysis. Known values: Ayurvedics, Building, Cosmetics, Cosmetics , Environment, Food, Medical Devices, Nutraceuticals, Others, Pharma, Textile, Water
+- `department.type` (str) — Identifies the structural type of the department record within the lab management system. Known values: DEPT
+- `discount_percent` (float) — Represents the percentage-based deduction applied to the test cost during financial processing. Known values: -3400.0, -800.0, -150.0, -65.22, -40.35, -25.0, -11.78, -11.11, -7.41, -6.94, -6.67, -6.25, 0.0, 28.57, 40.0, 45.0, 47.5, 48.57, 52.62, 55.0, 60.0, 62.5, 65.38, 89.9, 99.99, 100.0
+- `equipmentGroup.code` (str) — Represents the category code for grouping similar types of laboratory analytical equipment. Known values: GP-3, GP-4, GP-5, GP-6, GP-7
+- `equipmentGroup.name` (str) — The descriptive label for an equipment group, such as chromatography or chemical instrumentation. Known values: Chemical, Gas Chromatography, Inorganic, Liquid Chromatography, Microbiological
+- `equipment_list[].code` (str) — A list of unique identifiers for all equipment resources utilized to perform the specific test. Known values: EQ-181, EQ-196, EQ-198, EQ-202, EQ-209, EQ-215, EQ-217, EQ-26, EQ-260, EQ-27, EQ-28, EQ-292, EQ-30, EQ-350, EQ-430, EQ-493
+- `equipment_list[].name` (str) — A list of descriptive names for the various instruments used during the testing process. Known values: Bomb Calorimeter, Chemically, GCMSMS, Gravimetric, HPLC, Hot Air Oven, LCMSMS, Microbiological, NA, Not Applicable, RM Apparatus, Refractometer, Shore A Hardness Tester, Titration, UV-Spectrophotometer, Wascator/Dryer, pH Meter
+- `extra_amount` (float) — Records any additional fees or surcharges applied to the cost of this test parameter. Known values: 0.0, 100.0, 111.0, 200.0
+- `feasibility` (bool) — Determines whether the laboratory has the capability and resources to perform the requested test. Known values: False, True
+- `flagged` (bool) — A boolean indicator used to highlight records requiring attention, review, or special handling by staff. Known values: False
+- `freezed_result` (bool) — Indicates if the analytical test result is locked and prevents further modifications by laboratory staff. Known values: False, True
+- `gross_order_amount` (float) — Represents the total financial value of the order before any discounts or adjustments are applied. Known values: 0.0
+- `indexForParameterGroup` (int) — Determines the relative display order of this specific parameter within its broader testing group. Known values: 0, 1, 2, 3, 4
+- `joint_order` (bool) — Flag indicating if this laboratory test is part of a combined order spanning multiple requests. Known values: False
+- `manufactured_as_customer` (bool) — Specifies if the test sample was produced according to custom requirements provided by the client. Known values: False, True
+- `nabl_Scope` (bool) — Indicates if the performed test falls within the laboratory's NABL accreditation scope. Known values: False, True
+- `net_order_amount` (float) — The final total payable amount for the order after applying all applicable deductions. Known values: 0.0
+- `no_of_injection` (int) — The number of replicate injections performed during chromatographic or similar instrumental analysis. Known values: 0
+- `no_of_injection2` (int) — A secondary count of additional instrument injections required for the specific test protocol. Known values: 0
+- `no_of_samples` (int) — The total number of physical samples provided for the execution of this specific test. Known values: 0
+- `no_of_test_conditions` (int) — The count of distinct experimental settings or environmental conditions applied during testing. Known values: 0
+- `onhold` (bool) — A flag indicating that the testing process for this parameter is temporarily suspended. Known values: False
+- `order_discount_amount` (float) — The total currency value subtracted from the order cost due to applied discounts. Known values: 0.0
+- `order_effective_rate` (float) — The final adjusted pricing rate applied to this order after all negotiations or discounts. Known values: 0.0
+- `order_quantity` (int) — The total number of units or test items requested under this specific order. Known values: 0
+- `packing_mode` (str) — Describes the type of container or packaging method used for the sample being tested. Known values: 10, BOC, BOX, Bag, Beta Heart, Beta Heart2, Box, NA, OKJ, OLLKY, PLLY, PO, POLLY, POLY, Packed in bottle, S, an, bOX, bag, box, dsa, na, oikkyt, po, polly
+- `paramSequence` (int) — A unique identifier or index used to determine the display sequence of this parameter. Known values: 0, 59, 75, 81, 157, 177, 246, 310, 384
+- `param_category.name` (str) — The descriptive classification, such as chemical or physical, under which this parameter is grouped. Known values: Adulteration test, Aflatoxins, Amino Acid Profile, Assay Parameters, Chemical, Chemical Parameters, Chemically, Description, General Parameters, Heavy Metals, Indoor Air Quality Parameters, Microbiological Tests, Migration Test, Organoleptic, Organoleptic &Physical Parameter, Parameters Concerning Undesirable Substances in excess amount, Pesticide Residues, Physical Parameters, Specific Migration, Test Parameters, param cat ph
+- `param_decimal_place` (int) — Defines the required precision for the numeric representation of the test result. Known values: 0, 1, 2, 3
+- `parameterOutSourceStatus` (bool) — Indicates whether this specific test is performed by an external laboratory rather than in-house. Known values: False, True
+- `parameter_decimal_place` (int) — Specifies the number of decimal digits required for reporting the specific parameter's value. Known values: 0, 1, 2, 3
+- `parameter_quantum` (float) — The specific quantitative volume or amount of the parameter being evaluated in the test. Known values: 0.0
+- `qty` (int) — Indicates the numerical count of test units or samples being processed in the current order. Known values: 0, 1, 23
+- `quantum_rate` (float) — Defines the calculated financial rate or service cost associated with a specific quantity of test parameters. Known values: 0.0, 100.0, 150.0, 200.0, 250.0, 300.0, 450.0, 500.0, 600.0, 700.0, 750.0, 800.0, 900.0, 999.0, 1000.0, 1200.0, 1350.0, 1500.0, 2000.0, 2500.0, 3000.0, 25000.0
+- `quotation_effective_rate` (float) — The final, adjusted rate applied to the test after accounting for discounts or contractual terms. Known values: 0.0, 100.0, 150.0, 200.0, 250.0, 300.0, 450.0, 500.0, 600.0, 700.0, 750.0, 800.0, 900.0, 999.0, 1000.0, 1200.0, 1350.0, 1500.0, 2000.0, 2500.0, 3000.0, 12000.0, 22977.0, 25000.0, 34500.0
+- `quotation_rate` (float) — The base service rate per unit as defined in the associated commercial quotation. Known values: 0.0, 100.0, 150.0, 200.0, 250.0, 300.0, 450.0, 500.0, 600.0, 700.0, 750.0, 800.0, 900.0, 999.0, 1000.0, 1200.0, 1350.0, 1500.0, 2000.0, 2500.0, 3000.0, 12000.0, 25000.0
+- `rate_per_injection` (float) — Represents the specific fee charged for instrumentation runs or chemical injections required during analysis. Known values: 0.0
+- `refCode` (str) — An internal alphanumeric reference code used to categorize or group testing entries for administrative tracking. Known values: ITC01, ITC02, ITC03
+- `review_selected` (bool) — A toggle indicating if the test parameter has been marked for formal validation or administrative review. Known values: False, True
+- `sale_rate` (float) — The final transaction price per test unit to be billed to the laboratory client. Known values: 0.0, 100.0, 150.0, 200.0, 250.0, 300.0, 450.0, 500.0, 600.0, 700.0, 750.0, 800.0, 900.0, 999.0, 1000.0, 1200.0, 1350.0, 1500.0, 2000.0, 2500.0, 3000.0, 12000.0, 25000.0
+- `sampleCondition` (str) — Describes the physical state or integrity of the received specimen upon arrival at the laboratory. Known values: 10, Beta Heart, Beta Heart2, F, GOOD, Good, IJ, IOK, NA, OK, PL, an, asd, better, gOOD, goOD, good, na, ok, okj
+- `sample_image[].bucket` (str) — Specifies the cloud storage container where the associated supporting documentation or image is hosted. Known values: elabss-nonprod-documents, elabss-prod-documents
+- `sample_image[].customEntry` (bool) — A flag indicating if the file record was manually entered rather than automatically generated by the system. Known values: False
+- `sample_image[].fileExt` (str) — The file format or extension of the attached document, such as PDF or XLSX. Known values: PDF, pdf, xlsx
+- `sample_image[].folder` (bool) — A flag denoting whether the record represents a directory structure rather than an individual file. Known values: False
+- `sample_image[].pageCount` (int) — Represents the number of pages contained within the attached document file. Known values: 0
+- `sample_image[].publicFile` (bool) — Indicates whether the attached document is accessible via public URL or restricted to internal users. Known values: False
+- `sample_image[].readyFrView` (bool) — A flag identifying if the document has been processed and is ready for user display. Known values: False
+- `sample_image[].rollName` (str) — The original filename or assigned display name of the uploaded document for user reference. Known values: 55351398-b46a-4a4a-8854-da720ac95c37.pdf, 88bd33e3-dfe7-4641-b811-b046b7145c2e.pdf, E-Invoice Enable GSP.pdf, E02_2411110389_pdf (10) (1).pdf, E02_2411110389_pdf (10) (2).pdf, E02_2411110389_pdf (10) (3).pdf, ETRF-00007.pdf, IN01CS_2412310003_pdf.pdf, IN01FD_2502110006_pdf (1).pdf, IN02FD_2412310001_pdf.pdf, ITC Labs Panchkula (Analyst Qualification).PDF, Mis_parameter_wise_equipment_price-12_23_2024.xlsx, O02_2411180005_pdf (96) 1.pdf, SR01BL-2501020001 (1).pdf, SR01CS-2501020002.pdf, SR01CS-2501020005.pdf, SR01EN-2501020001.pdf, SR01FD_2412310006_pdf.pdf, SR01OT-2501020001.pdf, SR01PH_2501020004_pdf (1).pdf, SR01PH_2501020004_pdf (2).pdf, SR02FD_2503200005_pdf.pdf, Standardisation of LIMS Format no-271224-estimation.xlsx, UPMA_DR_2024_1127_009_pdf (7).pdf, _.pdf, salary excel.pdf
+- `sample_image[].type` (str) — Categorizes the nature of the document, such as a quotation parameter method or supporting report. Known values: quotation_param_methods
+- `scheduler.code` (str) — A unique identifier for the laboratory analyst or technician assigned to perform the scheduled test. Known values: BT, GT, HG, PS, SK, ps, vs
+- `scheduler.name` (str) — The full name of the laboratory staff member responsible for executing the assigned test task. Known values: Baddi Tester, Gaurav Kumar(IT), Himanshu Geet Sinha ( IT ), Praveen Singh(IT), Soora Kranthi Kumar, Vikrant Saini
+- `sealed_unsealed` (str) — Notes the integrity of the sample container, specifically whether it arrived sealed or otherwise. Known values: Intact, Not Applicable, Sealed, Sealed By Department, Sealed By Officer Incharge, Sealed Open and Partially Consumed , UnSealed
+- `sequence_no` (int) — An integer used to define the execution order or priority of the test parameter within the workflow. Known values: 0
+- `service_required` (str) — Indicates the turnaround time priority chosen by the client, such as express or regular processing. Known values: Express (2-3 working days 50% surcharge), Regular (4-7 working Days)
+- `signed_unsigned` (str) — Tracks the current verification or approval status of the test report by laboratory personnel. Known values: Not Applicable, Signed, Signed By Department, Signed By Officer Incharge, UnSigned
+- `standard_limit_type` (str) — Defines the expected data format for the test result, such as numeric or alpha-numeric ranges. Known values: Alpha-Numeric, NA, Numeric
+- `status` (str) — Indicates if the specific test parameter record is currently active for operations or marked inactive. Known values: Active, Inactive
+- `sub_category.name` (str) — The descriptive label for the testing industry category, such as fuel testing or construction materials. Known values: Bakery and Confectionary Products, Bandage, Biomass & Fuel Testing, Cereal, Civil Engineering Testing, Cooling Tower Water , Cream, Drinking/Ground/Borewell/raw/Potable Water, Fabric, Fresh Fruits & Vegetables, Gel Cleansers, Herbs, Spices & Condiments, Inhaler, Liquid Form, Migration & Metal Testing, Neutraceuticals, Oil & Fats, Others, PH S Cat, Packaged Drinking Water, Perfume, Pesticides, Powder, Raw Material, Shampoo, Soap, Standard Master, Syrup, Tablet
+- `sub_category.type` (str) — Categorizes the sub-category entry as a specific subset type within the laboratory's master data classification. Known values: SUBCAT
+- `subsequent_discount_amount` (float) — The flat monetary reduction applied to additional or subsequent testing units for this parameter. Known values: 0.0
+- `subsequent_discount_percent` (float) — The percentage reduction applied to the cost of additional testing samples of the same type. Known values: 0.0
+- `subsequent_offer_rate` (float) — The special price offered for repeating this specific test parameter beyond the initial request. Known values: 0.0
+- `supplied_as_customer` (bool) — A flag indicating if the testing sample was provided directly by the customer for evaluation. Known values: False, True
+- `test_analyst.name` (str) — The full name of the laboratory professional responsible for performing or documenting this specific test. Known values: Aditi Vyas, Amit Chauhan, Ashok Kumar, Baddi Tester, Chetna Rani, Gaurav Kumar(IT), Himanshu Geet Sinha ( IT ), Mansi Kandpal, Sub Contractor Chennai, TESTER1, Test12345
+- `test_standard.code` (str) — The internal reference code corresponding to the specific testing methodology or regulatory protocol used. Known values: TS-2, TS-332, TS-334, TS-336, TS-347, TS-349, TS-358, TS-364, TS-366, TS-368, TS-394, TS-398, TS-4, TS-454, TS-513, TS-534, TS-538, TS-635, TS-639, TS-641, TS-647, TS-711, TS-731, TS-766, TS-804, TS-999
+- `test_standard.name` (str) — The formal name of the regulatory or technical standard followed, such as ASTM, FSSAI, or IP. Known values: API, ASTM E870-82, As per specification 14258, FSSAI, IP, IP 2022, IS 10500:2012, IS 14543:2016(ReAff. 2021), IS 6438:1980, IS: 9845 & FSSAI, InHouse, NA, NABL, NABL , Party Specification, Party Specifications, Regulation No. 2.4.30(1)(1)(b)  flavoured soybean beverages of Food Safety and Standards (Food Products & Food Additive) Regulations, 2011, STP, USP
+- `test_status` (str) — Represents the current stage of the test processing lifecycle from initial booking to final invoice generation. Known values: , BOOKED, CANCELLED, DISPATCHING, FINALIZING, INVOICING, REVIEW, SECTION_INCHARGE, TESTING
+- `time_in_days` (str) — The expected duration required to complete the analysis, expressed in the number of working days. Known values: 1, 12, 13, 2, 3, 4, 5, 6
+- `total` (float) — The calculated financial cost or billed amount for performing this specific test parameter. Known values: 0.0, 100.0, 150.0, 200.0, 250.0, 300.0, 450.0, 500.0, 600.0, 700.0, 750.0, 800.0, 900.0, 999.0, 1000.0, 1200.0, 1350.0, 1500.0, 2000.0, 2500.0, 3000.0, 12000.0, 22977.0, 25000.0, 34500.0
+- `total_injection` (int) — The number of times a sample is injected into an analytical instrument for this specific test. Known values: 0
+- `updatedBy` (str) — The system user email address of the individual who last modified this test parameter record. Known values: ashok.kumar@e-labs.ai, badditester@itclims.com, gaurav.thakur@e-labs.ai, himanshu.sinha@gmail.com, praveen.singh@itclabs.com, ravinder.kumar@itclims.com, soora.kumar@itclims.com
+- `updatedByName` (str) — The full name of the laboratory staff member who performed the last modification to this entry. Known values: Ashok Kumar, Baddi Tester, Gaurav Kumar(IT), Himanshu Geet Sinha ( IT ), Praveen Singh(IT), Soora Kranthi Kumar, ravinder kumar
+
+## Other queryable fields
+
+- `altname` (str) — Stores a detailed, concatenated descriptive identifier used to uniquely label a specific test parameter for a sample. (207 distinct values, too many to list here; use the distinct_values tool if you need the exact set)
+- `analysisEndDate` (datetime) — Records the exact timestamp when the laboratory testing for this specific parameter was concluded.
+- `analysisStartDate` (datetime) — Records the exact timestamp when the laboratory testing process for this specific parameter was initiated.
+- `assigned_section.code` (str) — Contains the unique internal identifier for the specific laboratory section assigned to perform the test. (40 distinct values, too many to list here; use the distinct_values tool if you need the exact set)
+- `batch_number` (str) — Tracks the specific production lot or batch identifier assigned to the sample under analysis. (92 distinct values, too many to list here; use the distinct_values tool if you need the exact set)
+- `claim_limit_to` (str) — Defines the numerical threshold or qualitative limit used to evaluate if the test result is compliant. (86 distinct values, too many to list here; use the distinct_values tool if you need the exact set)
+- `createdDate` (datetime) — Records the system date and time when this record was first inserted into the database.
+- `department_due_date` (datetime) — Specifies the deadline by which the assigned department must complete the analysis.
+- `discount_amount` (float) — Stores the absolute monetary reduction applied to the base cost of this specific test. (37 distinct values, too many to list here; use the distinct_values tool if you need the exact set)
+- `dummy_batch` (str) — A secondary or internal identifier for tracking batches that may not follow standard production numbering. (92 distinct values, too many to list here; use the distinct_values tool if you need the exact set)
+- `equipment.code` (str) — The primary unique identifier for the specific instrument used to conduct the testing. (32 distinct values, too many to list here; use the distinct_values tool if you need the exact set)
+- `equipment.name` (str) — The descriptive name of the analytical instrument or device required for the test procedure. (32 distinct values, too many to list here; use the distinct_values tool if you need the exact set)
+- `index` (int) — A sequential integer used to uniquely order or sort individual entries within the collection. (64 distinct values, too many to list here; use the distinct_values tool if you need the exact set)
+- `limit_to` (str) — Defines the acceptable range or maximum threshold for the laboratory test result. (86 distinct values, too many to list here; use the distinct_values tool if you need the exact set)
+- `measuring_unit.code` (str) — The unique system identifier for the unit of measurement used in the test result. (43 distinct values, too many to list here; use the distinct_values tool if you need the exact set)
+- `measuring_unit.name` (str) — The human-readable label for the scale or unit applied to the test measurement. (44 distinct values, too many to list here; use the distinct_values tool if you need the exact set)
+- `method.code` (str) — The unique internal identifier for the standardized laboratory protocol used to perform the test. (92 distinct values, too many to list here; use the distinct_values tool if you need the exact set)
+- `method.name` (str) — The descriptive title or official reference number of the technical procedure used for testing. (78 distinct values, too many to list here; use the distinct_values tool if you need the exact set)
+- `method_names` (str) — A string containing the descriptive names of the methodologies applied to this specific test parameter. (78 distinct values, too many to list here; use the distinct_values tool if you need the exact set)
+- `name` (str) — The full descriptive identifier for the parameter, including product context and test specifications. (207 distinct values, too many to list here; use the distinct_values tool if you need the exact set)
+- `net_amount` (float) — The final calculated monetary value for this specific test parameter after discounts. (49 distinct values, too many to list here; use the distinct_values tool if you need the exact set)
+- `offer_rate` (float) — The quoted price rate offered to the client for performing this specific test. (48 distinct values, too many to list here; use the distinct_values tool if you need the exact set)
+- `order.code` (str) — The unique identifying alphanumeric code assigned to the laboratory test order. (170 distinct values, too many to list here; use the distinct_values tool if you need the exact set)
+- `order.name` (str) — The display name or reference string associated with the primary laboratory order. (170 distinct values, too many to list here; use the distinct_values tool if you need the exact set)
+- `order_date` (datetime) — The timestamp indicating when the specific testing order was officially placed.
+- `param_category.code` (str) — The unique system identifier for the group or category of the test parameter. (42 distinct values, too many to list here; use the distinct_values tool if you need the exact set)
+- `parameter.code` (str) — The unique internal system identifier assigned to the specific test parameter being performed. (165 distinct values, too many to list here; use the distinct_values tool if you need the exact set)
+- `parameter.name` (str) — The formal name of the specific chemical or physical property being measured. (141 distinct values, too many to list here; use the distinct_values tool if you need the exact set)
+- `per_sample_net_rate` (float) — The net cost calculated for processing a single individual sample for this parameter. (48 distinct values, too many to list here; use the distinct_values tool if you need the exact set)
+- `product.code` (str) — The unique identifier for the product type or specific item undergoing laboratory testing. (40 distinct values, too many to list here; use the distinct_values tool if you need the exact set)
+- `product.name` (str) — Identifies the specific physical item or trade name of the product submitted for laboratory testing. (40 distinct values, too many to list here; use the distinct_values tool if you need the exact set)
+- `product_test_master.code` (str) — A unique identifier for a pre-defined configuration of laboratory tests assigned to a specific product. (207 distinct values, too many to list here; use the distinct_values tool if you need the exact set)
+- `product_test_master.name` (str) — A descriptive label detailing the product, testing category, industry standard, and specific parameter to be analyzed. (207 distinct values, too many to list here; use the distinct_values tool if you need the exact set)
+- `quotation.code` (str) — The unique reference string assigned to the commercial quotation linked to this test order. (39 distinct values, too many to list here; use the distinct_values tool if you need the exact set)
+- `quotation.name` (str) — The display identifier or label for the service quotation applied to this order. (39 distinct values, too many to list here; use the distinct_values tool if you need the exact set)
+- `sample_booking.code` (str) — The unique system-generated identifier for the inward entry or registration record of a laboratory sample. (32 distinct values, too many to list here; use the distinct_values tool if you need the exact set)
+- `sample_booking.name` (str) — A concatenated identifier containing the client name, booking sequence, and laboratory location associated with the sample. (32 distinct values, too many to list here; use the distinct_values tool if you need the exact set)
+- `sample_image[].capKey` (str) — The unique path identifier for retrieving the specific document stored in the remote file system. (515 distinct values, too many to list here; use the distinct_values tool if you need the exact set)
+- `sample_image[].caseId` (str) — A database reference ID linking the uploaded document to a specific laboratory case or session. (519 distinct values, too many to list here; use the distinct_values tool if you need the exact set)
+- `sample_image[].fileSize` (Int64) — The total size of the uploaded document in bytes.
+- `sample_image[].key` (str) — The full storage object key used for locating and accessing the file in the cloud bucket. (515 distinct values, too many to list here; use the distinct_values tool if you need the exact set)
+- `sample_image[].srNumber` (Int64) — A sequential index number used to order multiple documents attached to a single test record.
+- `sample_name` (str) — The primary common name given to the specimen for internal tracking and reporting purposes. (50 distinct values, too many to list here; use the distinct_values tool if you need the exact set)
+- `sample_name_2` (str) — A secondary or alternative identifier used to refine the classification of the testing specimen. (54 distinct values, too many to list here; use the distinct_values tool if you need the exact set)
+- `sample_quantity` (str) — Records the volume or amount of the sample received, typically formatted as a string value. (40 distinct values, too many to list here; use the distinct_values tool if you need the exact set)
+- `scheduledDate` (datetime) — The calendar date and time reserved for performing the specific laboratory test procedure.
+- `section_order.code` (str) — A unique identifier for the logical grouping or departmental section assigned to the test order. (333 distinct values, too many to list here; use the distinct_values tool if you need the exact set)
+- `section_order.name` (str) — The descriptive title of the functional laboratory section responsible for the test process. (333 distinct values, too many to list here; use the distinct_values tool if you need the exact set)
+- `serialId` (str) — A unique identifier used for tracking individual test parameter entries within the laboratory order workflow. (716 distinct values, too many to list here; use the distinct_values tool if you need the exact set)
+- `srNumber` (Int64) — A sequential integer used to order or sort specific test parameters within a laboratory testing request.
+- `sub_category.code` (str) — The unique short-code identifier for the specific laboratory testing domain or product group. (31 distinct values, too many to list here; use the distinct_values tool if you need the exact set)
+- `test_result` (str) — The recorded outcome or measurement value obtained from performing the specified laboratory test procedure. (58 distinct values, too many to list here; use the distinct_values tool if you need the exact set)
+- `updateDate` (datetime) — The timestamp recording when the test parameter record was last modified in the system.
+
+## Internal / system fields (reference only, not for filtering)
+
+- `assigned_section._id` (str) — Internal database identifier for the linked record. Use the sibling `.name` or `.code` field for human-readable lookups rather than filtering on this id directly.
+- `assigned_section.allSelected` (bool) — Internal UI selection-state flag on this linked record; not meaningful for reporting or filtering.
+- `assigned_section.select` (bool) — Internal UI selection-state flag on this linked record; not meaningful for reporting or filtering.
+- `assigned_section.version` (int) — Internal optimistic-locking version counter on this linked record; not meaningful for reporting or filtering.
+- `branch._id` (str) — Internal database identifier for the linked record. Use the sibling `.name` or `.code` field for human-readable lookups rather than filtering on this id directly.
+- `branch.allSelected` (bool) — Internal UI selection-state flag on this linked record; not meaningful for reporting or filtering.
+- `branch.select` (bool) — Internal UI selection-state flag on this linked record; not meaningful for reporting or filtering.
+- `branch.version` (int) — Internal optimistic-locking version counter on this linked record; not meaningful for reporting or filtering.
+- `category._id` (str) — Internal database identifier for the linked record. Use the sibling `.name` or `.code` field for human-readable lookups rather than filtering on this id directly.
+- `category.allSelected` (bool) — Internal UI selection-state flag on this linked record; not meaningful for reporting or filtering.
+- `category.l1_parent_id` (str) — Internal database identifier for the linked record. Use the sibling `.name` or `.code` field for human-readable lookups rather than filtering on this id directly.
+- `category.select` (bool) — Internal UI selection-state flag on this linked record; not meaningful for reporting or filtering.
+- `category.version` (int) — Internal optimistic-locking version counter on this linked record; not meaningful for reporting or filtering.
+- `department._id` (str) — Internal database identifier for the linked record. Use the sibling `.name` or `.code` field for human-readable lookups rather than filtering on this id directly.
+- `department.allSelected` (bool) — Internal UI selection-state flag on this linked record; not meaningful for reporting or filtering.
+- `department.select` (bool) — Internal UI selection-state flag on this linked record; not meaningful for reporting or filtering.
+- `department.version` (int) — Internal optimistic-locking version counter on this linked record; not meaningful for reporting or filtering.
+- `equipment._id` (str) — Internal database identifier for the linked record. Use the sibling `.name` or `.code` field for human-readable lookups rather than filtering on this id directly.
+- `equipment.allSelected` (bool) — Internal UI selection-state flag on this linked record; not meaningful for reporting or filtering.
+- `equipment.select` (bool) — Internal UI selection-state flag on this linked record; not meaningful for reporting or filtering.
+- `equipment.version` (int) — Internal optimistic-locking version counter on this linked record; not meaningful for reporting or filtering.
+- `equipmentGroup._id` (str) — Internal database identifier for the linked record. Use the sibling `.name` or `.code` field for human-readable lookups rather than filtering on this id directly.
+- `equipmentGroup.version` (int) — Internal optimistic-locking version counter on this linked record; not meaningful for reporting or filtering.
+- `equipment_list` (array_of_objects) — Nested structure — see its sub-fields below for the actual queryable data.
+- `equipment_list[]._id` (str) — Internal database identifier for the linked record. Use the sibling `.name` or `.code` field for human-readable lookups rather than filtering on this id directly.
+- `equipment_list[].allSelected` (bool) — Internal UI selection-state flag on this linked record; not meaningful for reporting or filtering.
+- `equipment_list[].select` (bool) — Internal UI selection-state flag on this linked record; not meaningful for reporting or filtering.
+- `equipment_list[].version` (int) — Internal optimistic-locking version counter on this linked record; not meaningful for reporting or filtering.
+- `measuring_unit._id` (str) — Internal database identifier for the linked record. Use the sibling `.name` or `.code` field for human-readable lookups rather than filtering on this id directly.
+- `measuring_unit.allSelected` (bool) — Internal UI selection-state flag on this linked record; not meaningful for reporting or filtering.
+- `measuring_unit.select` (bool) — Internal UI selection-state flag on this linked record; not meaningful for reporting or filtering.
+- `measuring_unit.version` (int) — Internal optimistic-locking version counter on this linked record; not meaningful for reporting or filtering.
+- `method._id` (str) — Internal database identifier for the linked record. Use the sibling `.name` or `.code` field for human-readable lookups rather than filtering on this id directly.
+- `method.allSelected` (bool) — Internal UI selection-state flag on this linked record; not meaningful for reporting or filtering.
+- `method.select` (bool) — Internal UI selection-state flag on this linked record; not meaningful for reporting or filtering.
+- `method.version` (int) — Internal optimistic-locking version counter on this linked record; not meaningful for reporting or filtering.
+- `order._id` (str) — Internal database identifier for the linked record. Use the sibling `.name` or `.code` field for human-readable lookups rather than filtering on this id directly.
+- `order.allSelected` (bool) — Internal UI selection-state flag on this linked record; not meaningful for reporting or filtering.
+- `order.select` (bool) — Internal UI selection-state flag on this linked record; not meaningful for reporting or filtering.
+- `order.version` (int) — Internal optimistic-locking version counter on this linked record; not meaningful for reporting or filtering.
+- `param_category._id` (str) — Internal database identifier for the linked record. Use the sibling `.name` or `.code` field for human-readable lookups rather than filtering on this id directly.
+- `param_category.allSelected` (bool) — Internal UI selection-state flag on this linked record; not meaningful for reporting or filtering.
+- `param_category.select` (bool) — Internal UI selection-state flag on this linked record; not meaningful for reporting or filtering.
+- `param_category.version` (int) — Internal optimistic-locking version counter on this linked record; not meaningful for reporting or filtering.
+- `parameter._id` (str) — Internal database identifier for the linked record. Use the sibling `.name` or `.code` field for human-readable lookups rather than filtering on this id directly.
+- `parameter.allSelected` (bool) — Internal UI selection-state flag on this linked record; not meaningful for reporting or filtering.
+- `parameter.select` (bool) — Internal UI selection-state flag on this linked record; not meaningful for reporting or filtering.
+- `parameter.version` (int) — Internal optimistic-locking version counter on this linked record; not meaningful for reporting or filtering.
+- `product._id` (str) — Internal database identifier for the linked record. Use the sibling `.name` or `.code` field for human-readable lookups rather than filtering on this id directly.
+- `product.allSelected` (bool) — Internal UI selection-state flag on this linked record; not meaningful for reporting or filtering.
+- `product.select` (bool) — Internal UI selection-state flag on this linked record; not meaningful for reporting or filtering.
+- `product.version` (int) — Internal optimistic-locking version counter on this linked record; not meaningful for reporting or filtering.
+- `product_test_master._id` (str) — Internal database identifier for the linked record. Use the sibling `.name` or `.code` field for human-readable lookups rather than filtering on this id directly.
+- `product_test_master.allSelected` (bool) — Internal UI selection-state flag on this linked record; not meaningful for reporting or filtering.
+- `product_test_master.select` (bool) — Internal UI selection-state flag on this linked record; not meaningful for reporting or filtering.
+- `product_test_master.version` (int) — Internal optimistic-locking version counter on this linked record; not meaningful for reporting or filtering.
+- `quotation._id` (str) — Internal database identifier for the linked record. Use the sibling `.name` or `.code` field for human-readable lookups rather than filtering on this id directly.
+- `quotation.allSelected` (bool) — Internal UI selection-state flag on this linked record; not meaningful for reporting or filtering.
+- `quotation.select` (bool) — Internal UI selection-state flag on this linked record; not meaningful for reporting or filtering.
+- `quotation.version` (int) — Internal optimistic-locking version counter on this linked record; not meaningful for reporting or filtering.
+- `sample_booking._id` (str) — Internal database identifier for the linked record. Use the sibling `.name` or `.code` field for human-readable lookups rather than filtering on this id directly.
+- `sample_booking.allSelected` (bool) — Internal UI selection-state flag on this linked record; not meaningful for reporting or filtering.
+- `sample_booking.select` (bool) — Internal UI selection-state flag on this linked record; not meaningful for reporting or filtering.
+- `sample_booking.version` (int) — Internal optimistic-locking version counter on this linked record; not meaningful for reporting or filtering.
+- `sample_image` (array_of_objects) — Nested structure — see its sub-fields below for the actual queryable data.
+- `sample_image[]._id` (str) — Internal database identifier for the linked record. Use the sibling `.name` or `.code` field for human-readable lookups rather than filtering on this id directly.
+- `sample_image[].version` (int) — Internal optimistic-locking version counter on this linked record; not meaningful for reporting or filtering.
+- `scheduler._id` (str) — Internal database identifier for the linked record. Use the sibling `.name` or `.code` field for human-readable lookups rather than filtering on this id directly.
+- `scheduler.allSelected` (bool) — Internal UI selection-state flag on this linked record; not meaningful for reporting or filtering.
+- `scheduler.select` (bool) — Internal UI selection-state flag on this linked record; not meaningful for reporting or filtering.
+- `scheduler.version` (int) — Internal optimistic-locking version counter on this linked record; not meaningful for reporting or filtering.
+- `section_order._id` (str) — Internal database identifier for the linked record. Use the sibling `.name` or `.code` field for human-readable lookups rather than filtering on this id directly.
+- `section_order.allSelected` (bool) — Internal UI selection-state flag on this linked record; not meaningful for reporting or filtering.
+- `section_order.select` (bool) — Internal UI selection-state flag on this linked record; not meaningful for reporting or filtering.
+- `section_order.version` (int) — Internal optimistic-locking version counter on this linked record; not meaningful for reporting or filtering.
+- `sub_category._id` (str) — Internal database identifier for the linked record. Use the sibling `.name` or `.code` field for human-readable lookups rather than filtering on this id directly.
+- `sub_category.allSelected` (bool) — Internal UI selection-state flag on this linked record; not meaningful for reporting or filtering.
+- `sub_category.l1_parent_id` (str) — Internal database identifier for the linked record. Use the sibling `.name` or `.code` field for human-readable lookups rather than filtering on this id directly.
+- `sub_category.l2_parent_id` (str) — Internal database identifier for the linked record. Use the sibling `.name` or `.code` field for human-readable lookups rather than filtering on this id directly.
+- `sub_category.select` (bool) — Internal UI selection-state flag on this linked record; not meaningful for reporting or filtering.
+- `sub_category.version` (int) — Internal optimistic-locking version counter on this linked record; not meaningful for reporting or filtering.
+- `test_analyst._id` (str) — Internal database identifier for the linked record. Use the sibling `.name` or `.code` field for human-readable lookups rather than filtering on this id directly.
+- `test_analyst.allSelected` (bool) — Internal UI selection-state flag on this linked record; not meaningful for reporting or filtering.
+- `test_analyst.select` (bool) — Internal UI selection-state flag on this linked record; not meaningful for reporting or filtering.
+- `test_analyst.version` (int) — Internal optimistic-locking version counter on this linked record; not meaningful for reporting or filtering.
+- `test_standard._id` (str) — Internal database identifier for the linked record. Use the sibling `.name` or `.code` field for human-readable lookups rather than filtering on this id directly.
+- `test_standard.allSelected` (bool) — Internal UI selection-state flag on this linked record; not meaningful for reporting or filtering.
+- `test_standard.select` (bool) — Internal UI selection-state flag on this linked record; not meaningful for reporting or filtering.
+- `test_standard.version` (int) — Internal optimistic-locking version counter on this linked record; not meaningful for reporting or filtering.
+- `version` (int) — Internal optimistic-locking version counter on this linked record; not meaningful for reporting or filtering.

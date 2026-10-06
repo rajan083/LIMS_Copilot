@@ -1,0 +1,2592 @@
+{
+  "app_invoice": {
+    "_class": {
+      "description": "Specifies the fully qualified Java class name for object-document mapping within the application framework.",
+      "type": "str"
+    },
+    "allDepartment": {
+      "description": "Indicates if the invoice applies to all departments or is restricted to a specific one.",
+      "type": "bool"
+    },
+    "appId": {
+      "description": "A short unique identifier for the specific lab instance or business unit generating the invoice.",
+      "type": "str"
+    },
+    "billingCompany.code": {
+      "description": "The unique system-assigned alphanumeric ID for the client receiving the invoice.",
+      "type": "str"
+    },
+    "billingCompany.name": {
+      "description": "The official business name of the client organization to be invoiced.",
+      "type": "str"
+    },
+    "billing_address": {
+      "description": "The primary physical street address where the invoice is sent for the client.",
+      "type": "str"
+    },
+    "billing_address_line2": {
+      "description": "The secondary part of the physical address, typically indicating a specific locality or area.",
+      "type": "str"
+    },
+    "billing_city": {
+      "description": "The city associated with the client's official billing address.",
+      "type": "str"
+    },
+    "billing_company": {
+      "description": "The display name of the customer entity responsible for paying the laboratory invoice.",
+      "type": "str"
+    },
+    "billing_contact_person": {
+      "description": "The specific individual at the client organization designated as the primary billing contact.",
+      "type": "str"
+    },
+    "billing_contact_person_email": {
+      "description": "The electronic mail address used to send billing communications to the customer's contact person.",
+      "type": "str"
+    },
+    "billing_country": {
+      "description": "The country where the client's billing address is located.",
+      "type": "str"
+    },
+    "billing_gst": {
+      "description": "The Goods and Services Tax Identification Number for the client entity for taxation purposes.",
+      "type": "str"
+    },
+    "billing_mobile": {
+      "description": "The mobile telephone number provided for reaching the client's billing contact.",
+      "type": "str"
+    },
+    "billing_state": {
+      "description": "The state or province where the client's billing address resides.",
+      "type": "str"
+    },
+    "billing_tel": {
+      "description": "The landline telephone number for the client's billing department.",
+      "type": "str"
+    },
+    "billing_type": {
+      "description": "Defines the methodology for invoice generation, such as grouping charges by individual orders.",
+      "type": "str"
+    },
+    "branch.code": {
+      "description": "The unique identifier for the specific laboratory branch office issuing the invoice.",
+      "type": "str"
+    },
+    "branch.name": {
+      "description": "The name of the physical laboratory location that performed the testing services.",
+      "type": "str"
+    },
+    "cancelReason": {
+      "description": "The documented reason provided for cancelling an invoice entry in the system.",
+      "type": "str"
+    },
+    "cancellation_approval_date": {
+      "description": "The timestamp indicating when the invoice cancellation was formally authorized.",
+      "type": "datetime"
+    },
+    "cancellation_approved_by_name": {
+      "description": "The full name of the laboratory staff member who authorized the invoice cancellation.",
+      "type": "str"
+    },
+    "cancellation_type": {
+      "description": "Categorizes the nature of the invoice cancellation, such as a partial adjustment or full regeneration.",
+      "type": "str"
+    },
+    "city": {
+      "description": "The city location associated with the lab branch or primary operation site.",
+      "type": "str"
+    },
+    "country": {
+      "description": "The country where the laboratory operation is currently based.",
+      "type": "str"
+    },
+    "createdBy": {
+      "description": "The system username or email of the employee who originally created this invoice record.",
+      "type": "str"
+    },
+    "createdByName": {
+      "description": "The full display name of the staff member responsible for generating the invoice.",
+      "type": "str"
+    },
+    "createdDate": {
+      "description": "The exact date and time the invoice document was first entered into the database.",
+      "type": "datetime"
+    },
+    "creditAmount": {
+      "description": "The total value of credits applied to the invoice, reducing the final balance due.",
+      "type": "float"
+    },
+    "customEntry": {
+      "description": "A flag indicating if the invoice was created manually rather than generated via automated system processes.",
+      "type": "bool"
+    },
+    "debitAmount": {
+      "description": "The total value of debits applied, indicating additional charges added to the invoice balance.",
+      "type": "float"
+    },
+    "department.code": {
+      "description": "The unique identifier for the laboratory department responsible for the testing services rendered.",
+      "type": "str"
+    },
+    "department.name": {
+      "description": "The formal name of the laboratory department that conducted the testing.",
+      "type": "str"
+    },
+    "department.type": {
+      "description": "Classification of the department entity within the laboratory organizational structure.",
+      "type": "str"
+    },
+    "disc_amount": {
+      "description": "The total monetary discount applied to the invoice before calculating final taxes.",
+      "type": "float"
+    },
+    "due_date": {
+      "description": "The calendar date by which the client is required to settle the invoice payment.",
+      "type": "datetime"
+    },
+    "gross_amount": {
+      "description": "The total invoice value before any deductions, discounts, or tax adjustments.",
+      "type": "float"
+    },
+    "gstin": {
+      "description": "The Tax Identification Number used for regulatory compliance and tax reporting on the invoice.",
+      "type": "str"
+    },
+    "in_out": {
+      "description": "A numeric indicator representing whether the invoice is an incoming payment or an outgoing billing.",
+      "type": "int"
+    },
+    "invRefDate": {
+      "description": "The reference date associated with the invoice creation or the underlying service order.",
+      "type": "datetime"
+    },
+    "invoiceCancellationStatus": {
+      "description": "Tracks the approval lifecycle of an invoice cancellation request within the laboratory's accounting workflow.",
+      "type": "str"
+    },
+    "invoiceDispatchStatus": {
+      "description": "Indicates whether the finalized invoice has been officially sent or transmitted to the customer.",
+      "type": "str"
+    },
+    "invoiceMailStatus": {
+      "description": "Monitors the delivery success or failure of automated email notifications sent for an invoice.",
+      "type": "str"
+    },
+    "invoicePaymentReceiptStatus": {
+      "description": "Reports whether the financial transaction or payment acknowledgment for the invoice has been successfully processed.",
+      "type": "str"
+    },
+    "invoiceRemark": {
+      "description": "Provides brief notes or internal commentary regarding the status or processing of the invoice.",
+      "type": "str"
+    },
+    "invoiceStatus": {
+      "description": "Represents the primary operational state of the invoice, such as whether it is currently active or cancelled.",
+      "type": "str"
+    },
+    "invoice_date": {
+      "description": "The specific calendar date on which the invoice was generated or issued.",
+      "type": "datetime"
+    },
+    "invoice_type": {
+      "description": "Categorizes the document as either a standard sale invoice or a financial credit note.",
+      "type": "str"
+    },
+    "invoices.code": {
+      "description": "A unique alphanumeric identifier assigned to a specific invoice document for systematic tracking.",
+      "type": "str"
+    },
+    "invoices.name": {
+      "description": "The display label or reference name used to identify the invoice within the system interface.",
+      "type": "str"
+    },
+    "items_list[].analysis_type": {
+      "description": "Defines the specific laboratory testing methodology or project scope applied to the invoiced sample.",
+      "type": "str"
+    },
+    "items_list[].batch_number": {
+      "description": "Records the production or identification number of the specific product batch submitted for laboratory testing.",
+      "type": "str"
+    },
+    "items_list[].batch_size": {
+      "description": "Specifies the total quantity or volume of the product batch undergoing analysis.",
+      "type": "str"
+    },
+    "items_list[].billing_address": {
+      "description": "The physical street address where the invoice recipient is located for billing purposes.",
+      "type": "str"
+    },
+    "items_list[].billing_city": {
+      "description": "The city associated with the customer's billing address.",
+      "type": "str"
+    },
+    "items_list[].billing_company": {
+      "description": "The corporate entity or organization responsible for payment of the testing services.",
+      "type": "str"
+    },
+    "items_list[].billing_contact_person": {
+      "description": "The designated individual acting as the primary point of contact for billing inquiries.",
+      "type": "str"
+    },
+    "items_list[].billing_contact_person_email": {
+      "description": "The electronic mail address used for delivering invoices to the designated contact person.",
+      "type": "str"
+    },
+    "items_list[].billing_country": {
+      "description": "The nation where the client\u2019s billing address is located.",
+      "type": "str"
+    },
+    "items_list[].billing_fax": {
+      "description": "The facsimile number designated for the transmission of formal billing documents.",
+      "type": "str"
+    },
+    "items_list[].billing_gst": {
+      "description": "The Goods and Services Tax identification number for the customer's tax compliance.",
+      "type": "str"
+    },
+    "items_list[].billing_mobile": {
+      "description": "The primary mobile telephone number for the customer\u2019s billing department contact.",
+      "type": "str"
+    },
+    "items_list[].billing_pincode": {
+      "description": "The postal or zip code for the client\u2019s specified billing location.",
+      "type": "str"
+    },
+    "items_list[].billing_state": {
+      "description": "The state or province of the customer's billing address.",
+      "type": "str"
+    },
+    "items_list[].billing_tel": {
+      "description": "The landline telephone number for contacting the client regarding billing matters.",
+      "type": "str"
+    },
+    "items_list[].booking_status": {
+      "description": "Indicates the current reservation or scheduling status of the lab testing request.",
+      "type": "str"
+    },
+    "items_list[].brand": {
+      "description": "Specifies the product brand or manufacturer label associated with the sample being tested.",
+      "type": "str"
+    },
+    "items_list[].category.code": {
+      "description": "The unique system identifier corresponding to a specific laboratory product or analysis category.",
+      "type": "str"
+    },
+    "items_list[].category.name": {
+      "description": "The descriptive name of the sample classification, such as food or cosmetic products.",
+      "type": "str"
+    },
+    "items_list[].category.selected": {
+      "description": "A boolean flag indicating if this category is currently active or selected for the invoice item.",
+      "type": "bool"
+    },
+    "items_list[].category.type": {
+      "description": "The high-level classification type used to group laboratory service categories.",
+      "type": "str"
+    },
+    "items_list[].cgst_amount": {
+      "description": "The specific monetary value of the Central Goods and Services Tax applied to the invoice item.",
+      "type": "int"
+    },
+    "items_list[].code_number": {
+      "description": "A supplementary identifier or internal code for further tracking of the tested item.",
+      "type": "str"
+    },
+    "items_list[].customer.code": {
+      "description": "A unique reference ID assigned to a registered customer within the laboratory information system.",
+      "type": "str"
+    },
+    "items_list[].customer.name": {
+      "description": "The official name of the client organization along with their relevant branch or location.",
+      "type": "str"
+    },
+    "items_list[].customer.selected": {
+      "description": "A boolean indicating whether this specific customer record is chosen for the current invoice.",
+      "type": "bool"
+    },
+    "items_list[].declared_value": {
+      "description": "The monetary value of the sample as declared by the customer for insurance or logistics purposes.",
+      "type": "str"
+    },
+    "items_list[].discount_amount": {
+      "description": "The fixed monetary deduction applied to the service cost of the invoice item.",
+      "type": "int"
+    },
+    "items_list[].discount_percent": {
+      "description": "The percentage rate used to calculate the price reduction for the laboratory service item.",
+      "type": "int"
+    },
+    "items_list[].equipment_list": {
+      "description": "A list of the specific analytical instruments or machinery utilized to process the testing request.",
+      "type": "array"
+    },
+    "items_list[].expiry_date": {
+      "description": "The shelf-life termination date of the specific sample being tested.",
+      "type": "str"
+    },
+    "items_list[].extra_amount": {
+      "description": "Any additional miscellaneous fees or surcharges applied to the line item.",
+      "type": "int"
+    },
+    "items_list[].final_amount": {
+      "description": "The total cost for the line item after taxes, discounts, and adjustments are applied.",
+      "type": "int"
+    },
+    "items_list[].grade": {
+      "description": "The classification or quality standard assigned to the submitted sample.",
+      "type": "str"
+    },
+    "items_list[].igst_amount": {
+      "description": "The Integrated Goods and Services Tax value calculated for the line item.",
+      "type": "int"
+    },
+    "items_list[].letter_ref_date": {
+      "description": "The official date associated with the client's reference correspondence or request letter.",
+      "type": "str"
+    },
+    "items_list[].letter_ref_no": {
+      "description": "The unique tracking identifier for the client's formal submission or reference letter.",
+      "type": "str"
+    },
+    "items_list[].mfg_by": {
+      "description": "The name of the manufacturer responsible for producing the sample under test.",
+      "type": "str"
+    },
+    "items_list[].mfg_date": {
+      "description": "The date on which the sample was originally produced or manufactured.",
+      "type": "str"
+    },
+    "items_list[].name": {
+      "description": "The unique identifier string representing a specific laboratory test request entry.",
+      "type": "str"
+    },
+    "items_list[].net_amount": {
+      "description": "The price of the item before taxes or additional charges are factored in.",
+      "type": "int"
+    },
+    "items_list[].order_discount_amount": {
+      "description": "The total monetary value subtracted from the order cost as a promotional reduction.",
+      "type": "int"
+    },
+    "items_list[].order_discount_percent": {
+      "description": "The percentage rate applied to the order to determine the discount amount.",
+      "type": "int"
+    },
+    "items_list[].order_final_amount": {
+      "description": "The final payable amount for the entire order after all adjustments.",
+      "type": "int"
+    },
+    "items_list[].order_net_amount": {
+      "description": "The subtotal for the entire order before final taxes and fees.",
+      "type": "int"
+    },
+    "items_list[].order_number": {
+      "description": "The primary alphanumeric code used to track the overall client service request.",
+      "type": "str"
+    },
+    "items_list[].order_status": {
+      "description": "The current workflow stage of the order, such as processing or dispatching.",
+      "type": "str"
+    },
+    "items_list[].order_surcharge": {
+      "description": "Any supplemental fees added to the total order beyond standard pricing.",
+      "type": "int"
+    },
+    "items_list[].order_total": {
+      "description": "The aggregate gross cost of all items included in the specific order.",
+      "type": "int"
+    },
+    "items_list[].packing_mode": {
+      "description": "The physical container or method used for transporting the sample to the lab.",
+      "type": "str"
+    },
+    "items_list[].parameter_list": {
+      "description": "A collection of specific analytical metrics or chemical elements required for the laboratory test.",
+      "type": "array"
+    },
+    "items_list[].parameters": {
+      "description": "A descriptive string listing the specific tests or analytical parameters performed on the sample.",
+      "type": "str"
+    },
+    "items_list[].per_sample_total": {
+      "description": "The calculated cost allocated specifically to an individual sample within the order.",
+      "type": "int"
+    },
+    "items_list[].po_no": {
+      "description": "The client's Purchase Order number associated with the service request.",
+      "type": "str"
+    },
+    "items_list[].ptlNo": {
+      "description": "The internal Laboratory Test Report tracking number assigned to the submission.",
+      "type": "str"
+    },
+    "items_list[].qty": {
+      "description": "The numerical count of items or units submitted for testing.",
+      "type": "int"
+    },
+    "items_list[].rate": {
+      "description": "The unit price assigned for the specific testing service provided.",
+      "type": "str"
+    },
+    "items_list[].report_date": {
+      "description": "The date on which the laboratory analysis report was generated or finalized.",
+      "type": "str"
+    },
+    "items_list[].report_number": {
+      "description": "The unique identification number assigned to the formal analytical results document.",
+      "type": "str"
+    },
+    "items_list[].sales_executive.code": {
+      "description": "The unique identifier code for the sales representative managing the client account.",
+      "type": "str"
+    },
+    "items_list[].sales_executive.name": {
+      "description": "The human-readable name of the sales representative assigned to the order.",
+      "type": "str"
+    },
+    "items_list[].sales_executive.selected": {
+      "description": "A toggle indicating if this specific executive is assigned to the current transaction.",
+      "type": "bool"
+    },
+    "items_list[].sample_name": {
+      "description": "The descriptive identity or label of the product undergoing laboratory analysis.",
+      "type": "str"
+    },
+    "items_list[].sample_name_2": {
+      "description": "An alternative or secondary identification label for the sample being tested.",
+      "type": "str"
+    },
+    "items_list[].sample_quantity": {
+      "description": "The volume or weight of the specimen provided for the testing procedure.",
+      "type": "str"
+    },
+    "items_list[].sampling_charge": {
+      "description": "The fee levied specifically for the collection or preparation of the sample.",
+      "type": "int"
+    },
+    "items_list[].selected": {
+      "description": "A flag indicating if this item is currently selected for invoicing or reporting.",
+      "type": "bool"
+    },
+    "items_list[].sgst_amount": {
+      "description": "The State Goods and Services Tax value calculated for the line item.",
+      "type": "int"
+    },
+    "items_list[].stabilityNote": {
+      "description": "Any specific observations regarding the physical or chemical stability of the sample.",
+      "type": "str"
+    },
+    "items_list[].sub_category.code": {
+      "description": "The specific internal code representing the sub-category of the tested material.",
+      "type": "str"
+    },
+    "items_list[].sub_category.name": {
+      "description": "Specifies the testing domain or product category assigned to the invoice line item.",
+      "type": "str"
+    },
+    "items_list[].sub_category.selected": {
+      "description": "Indicates whether the specific sub-category has been flagged for inclusion in the current invoice calculation.",
+      "type": "bool"
+    },
+    "items_list[].sub_category.type": {
+      "description": "Defines the internal classification type for the sub-category record in the system.",
+      "type": "str"
+    },
+    "items_list[].supplied_by": {
+      "description": "Records the entity or vendor responsible for providing the material or sample for testing.",
+      "type": "str"
+    },
+    "items_list[].test_standard": {
+      "description": "Contains metadata and versioning information for the regulatory or laboratory test standards applied to the item.",
+      "type": "str"
+    },
+    "items_list[].total": {
+      "description": "Represents the calculated monetary value for an individual invoice line item.",
+      "type": "int"
+    },
+    "items_list[].uom": {
+      "description": "Specifies the unit of measurement used for the laboratory test results or billing quantity.",
+      "type": "str"
+    },
+    "last_name": {
+      "description": "The surname of the individual client or laboratory contact person associated with this invoice.",
+      "type": "str"
+    },
+    "net_amount": {
+      "description": "The final total payable amount after applying all applicable taxes, discounts, and surcharges.",
+      "type": "float"
+    },
+    "party.code": {
+      "description": "A unique internal identifier assigned to the laboratory client or partner.",
+      "type": "str"
+    },
+    "party.name": {
+      "description": "The legal business name of the client or organization being invoiced.",
+      "type": "str"
+    },
+    "pin_code": {
+      "description": "The postal or area code of the client's registered business address.",
+      "type": "str"
+    },
+    "print_template": {
+      "description": "Identifies the specific layout configuration used when generating the physical invoice document.",
+      "type": "str"
+    },
+    "refCode": {
+      "description": "A shorthand reference identifier used for internal system categorization or laboratory department tracking.",
+      "type": "str"
+    },
+    "referenceNumber": {
+      "description": "An optional external reference or document number provided by the client for tracking purposes.",
+      "type": "str"
+    },
+    "serialId": {
+      "description": "The unique, human-readable serial number assigned to the specific invoice record.",
+      "type": "str"
+    },
+    "series": {
+      "description": "Categorizes the invoice into a specific numbering sequence or business transaction group.",
+      "type": "str"
+    },
+    "srNumber": {
+      "description": "A sequential numerical identifier used for internal database sorting and indexing of invoices.",
+      "type": "Int64"
+    },
+    "state": {
+      "description": "The administrative region or state associated with the party's billing address.",
+      "type": "str"
+    },
+    "status": {
+      "description": "Indicates the current lifecycle stage of the invoice, such as pending approval or active.",
+      "type": "str"
+    },
+    "surcharge": {
+      "description": "An additional fee or levy applied to the invoice balance beyond standard pricing.",
+      "type": "float"
+    },
+    "tax_amount": {
+      "description": "The total currency value calculated based on the applicable tax rates for the items.",
+      "type": "float"
+    },
+    "tax_percentage": {
+      "description": "The standard percentage rate used to compute the tax liabilities for the invoice.",
+      "type": "float"
+    },
+    "tax_type": {
+      "description": "Identifies the nature of the tax levied, such as GST or IGST.",
+      "type": "str"
+    },
+    "taxable_amount": {
+      "description": "The base amount of the invoice upon which tax calculations are applied.",
+      "type": "float"
+    },
+    "total_amount.additonal_discount": {
+      "description": "The monetary value of any supplemental discounts applied to the total invoice.",
+      "type": "float"
+    },
+    "total_amount.cess_amount": {
+      "description": "The specific currency amount for any additional cess or secondary tax applied.",
+      "type": "float"
+    },
+    "total_amount.cess_percent": {
+      "description": "The percentage rate used for calculating the cess portion of the total tax.",
+      "type": "float"
+    },
+    "total_amount.cgst_amount": {
+      "description": "The monetary value of the Central Goods and Services Tax applied to the invoice.",
+      "type": "float"
+    },
+    "total_amount.cgst_percent": {
+      "description": "The percentage rate used to determine the Central Goods and Services Tax value.",
+      "type": "float"
+    },
+    "total_amount.convertedAmount": {
+      "description": "The final amount adjusted for currency exchange or conversion requirements.",
+      "type": "float"
+    },
+    "total_amount.coupon_amount": {
+      "description": "A reduction in the total invoice amount resulting from a promotional coupon or credit.",
+      "type": "float"
+    },
+    "total_amount.discount_amount": {
+      "description": "The total currency value subtracted from the gross amount for promotional or negotiated discounts.",
+      "type": "float"
+    },
+    "total_amount.discount_percent": {
+      "description": "The percentage rate applied to the gross total to determine the overall discount value.",
+      "type": "float"
+    },
+    "total_amount.extraAmount": {
+      "description": "Any supplementary charges or adjustments added to the final invoice total.",
+      "type": "float"
+    },
+    "total_amount.gross_amount": {
+      "description": "The total invoice sum calculated before the application of taxes, discounts, or additional fees.",
+      "type": "float"
+    },
+    "total_amount.gst_amount": {
+      "description": "The aggregate value of Goods and Services Tax applied to the invoice line items.",
+      "type": "float"
+    },
+    "total_amount.gst_percent": {
+      "description": "The combined percentage rate used to calculate the overall GST for the invoice.",
+      "type": "float"
+    },
+    "total_amount.igst_amount": {
+      "description": "The monetary value of the Integrated Goods and Services Tax applied to the invoice.",
+      "type": "float"
+    },
+    "total_amount.igst_gst_amount": {
+      "description": "A combined field representing the calculated total for IGST and standard GST components.",
+      "type": "float"
+    },
+    "total_amount.igst_gst_percent": {
+      "description": "Specifies the combined percentage rate applied for Integrated Goods and Services Tax calculations.",
+      "type": "float"
+    },
+    "total_amount.igst_percent": {
+      "description": "Represents the specific percentage rate applied for interstate IGST tax assessments on the laboratory invoice.",
+      "type": "float"
+    },
+    "total_amount.loyalty_amount": {
+      "description": "Denotes the monetary value deducted from the invoice total based on customer loyalty program credits.",
+      "type": "float"
+    },
+    "total_amount.loyalty_percent": {
+      "description": "Indicates the percentage-based discount rate applied to the invoice through loyalty point redemption.",
+      "type": "float"
+    },
+    "total_amount.net_amount": {
+      "description": "Reflects the base cost of laboratory services after discounts but before applying taxes and additional fees.",
+      "type": "float"
+    },
+    "total_amount.net_payble": {
+      "description": "Specifies the final total amount the customer is required to pay, including all taxes and adjustments.",
+      "type": "float"
+    },
+    "total_amount.sez_amount": {
+      "description": "Indicates the specific monetary value attributed to Special Economic Zone tax exemptions or zero-rated supplies.",
+      "type": "float"
+    },
+    "total_amount.sez_percent": {
+      "description": "Defines the tax rate percentage applied to services provided within or to a Special Economic Zone.",
+      "type": "float"
+    },
+    "total_amount.sgst_amount": {
+      "description": "Records the calculated monetary value of the State Goods and Services Tax levied on the invoice.",
+      "type": "float"
+    },
+    "total_amount.sgst_percent": {
+      "description": "Represents the percentage rate used to calculate the State Goods and Services Tax for the transaction.",
+      "type": "float"
+    },
+    "total_amount.surcharge": {
+      "description": "Stores any additional fees or administrative levies applied beyond standard service costs and taxes.",
+      "type": "float"
+    },
+    "total_amount.tax_amount": {
+      "description": "Aggregates the total monetary value of all distinct taxes applied to the laboratory invoice services.",
+      "type": "float"
+    },
+    "total_amount.taxable_amount": {
+      "description": "Identifies the base service cost used as the foundation for calculating subsequent tax obligations.",
+      "type": "float"
+    },
+    "updateDate": {
+      "description": "Records the precise timestamp when the invoice record was most recently modified in the database.",
+      "type": "datetime"
+    },
+    "updatedBy": {
+      "description": "Contains the unique email identifier of the staff member who performed the last invoice modification.",
+      "type": "str"
+    },
+    "updatedByName": {
+      "description": "Stores the full name and department affiliation of the user who last updated this invoice entry.",
+      "type": "str"
+    },
+    "voucherType": {
+      "description": "Categorizes the invoice transaction, identifying it as a payment adjustment or settlement against an existing invoice.",
+      "type": "str"
+    }
+  },
+  "el_order_test_parameter": {
+    "_class": {
+      "description": "Specifies the Java class mapping for the document within the application's persistence layer.",
+      "type": "str"
+    },
+    "actual_tat": {
+      "description": "Represents the number of days taken to complete the test parameter analysis in reality.",
+      "type": "int"
+    },
+    "altname": {
+      "description": "Stores a detailed, concatenated descriptive identifier used to uniquely label a specific test parameter for a sample.",
+      "type": "str"
+    },
+    "analysisEndDate": {
+      "description": "Records the exact timestamp when the laboratory testing for this specific parameter was concluded.",
+      "type": "datetime"
+    },
+    "analysisStartDate": {
+      "description": "Records the exact timestamp when the laboratory testing process for this specific parameter was initiated.",
+      "type": "datetime"
+    },
+    "analysis_type": {
+      "description": "Categorizes the testing approach, such as routine quality control, stability studies, or formal method validation.",
+      "type": "str"
+    },
+    "assigned_section.code": {
+      "description": "Contains the unique internal identifier for the specific laboratory section assigned to perform the test.",
+      "type": "str"
+    },
+    "assigned_section.name": {
+      "description": "Indicates the descriptive name of the laboratory department or section responsible for this test.",
+      "type": "str"
+    },
+    "batch_number": {
+      "description": "Tracks the specific production lot or batch identifier assigned to the sample under analysis.",
+      "type": "str"
+    },
+    "branch.code": {
+      "description": "Provides the unique alphanumeric identifier for the specific laboratory branch location.",
+      "type": "str"
+    },
+    "branch.name": {
+      "description": "Identifies the physical city or regional office name where the laboratory branch is situated.",
+      "type": "str"
+    },
+    "brand": {
+      "description": "Refers to the specific commercial product name or label associated with the submitted sample.",
+      "type": "str"
+    },
+    "category.code": {
+      "description": "Stores the unique identifier for the high-level industry or product classification of the test.",
+      "type": "str"
+    },
+    "category.name": {
+      "description": "Provides the descriptive label for the product category, such as bakery products or cosmetic goods.",
+      "type": "str"
+    },
+    "category.type": {
+      "description": "Specifies the formal classification type of the category entity within the system.",
+      "type": "str"
+    },
+    "claim_dependent": {
+      "description": "Indicates if the result limit or pass/fail criteria is dependent on a specific manufacturer claim.",
+      "type": "bool"
+    },
+    "claim_limit_to": {
+      "description": "Defines the numerical threshold or qualitative limit used to evaluate if the test result is compliant.",
+      "type": "str"
+    },
+    "condition_to_maintain": {
+      "description": "Specifies the required storage or environmental conditions, such as temperature, needed for sample integrity.",
+      "type": "str"
+    },
+    "cost_rate": {
+      "description": "Defines the standard financial price charged for conducting this specific test parameter.",
+      "type": "float"
+    },
+    "createdBy": {
+      "description": "Logs the email address of the system user who initially generated this record.",
+      "type": "str"
+    },
+    "createdByName": {
+      "description": "Displays the full name of the user responsible for creating this order test parameter record.",
+      "type": "str"
+    },
+    "createdDate": {
+      "description": "Records the system date and time when this record was first inserted into the database.",
+      "type": "datetime"
+    },
+    "customEntry": {
+      "description": "A boolean flag indicating if the test parameter record was created via manual entry rather than templates.",
+      "type": "bool"
+    },
+    "customer_tat": {
+      "description": "Represents the committed turnaround time in days promised to the customer for this specific test.",
+      "type": "int"
+    },
+    "department.code": {
+      "description": "Contains the unique code for the overarching functional department overseeing the test.",
+      "type": "str"
+    },
+    "department.name": {
+      "description": "Provides the name of the laboratory department, such as food or cosmetics, responsible for the analysis.",
+      "type": "str"
+    },
+    "department.type": {
+      "description": "Identifies the structural type of the department record within the lab management system.",
+      "type": "str"
+    },
+    "department_due_date": {
+      "description": "Specifies the deadline by which the assigned department must complete the analysis.",
+      "type": "datetime"
+    },
+    "discount_amount": {
+      "description": "Stores the absolute monetary reduction applied to the base cost of this specific test.",
+      "type": "float"
+    },
+    "discount_percent": {
+      "description": "Represents the percentage-based deduction applied to the test cost during financial processing.",
+      "type": "float"
+    },
+    "dummy_batch": {
+      "description": "A secondary or internal identifier for tracking batches that may not follow standard production numbering.",
+      "type": "str"
+    },
+    "equipment.code": {
+      "description": "The primary unique identifier for the specific instrument used to conduct the testing.",
+      "type": "str"
+    },
+    "equipment.name": {
+      "description": "The descriptive name of the analytical instrument or device required for the test procedure.",
+      "type": "str"
+    },
+    "equipmentGroup.code": {
+      "description": "Represents the category code for grouping similar types of laboratory analytical equipment.",
+      "type": "str"
+    },
+    "equipmentGroup.name": {
+      "description": "The descriptive label for an equipment group, such as chromatography or chemical instrumentation.",
+      "type": "str"
+    },
+    "equipment_list[].code": {
+      "description": "A list of unique identifiers for all equipment resources utilized to perform the specific test.",
+      "type": "str"
+    },
+    "equipment_list[].name": {
+      "description": "A list of descriptive names for the various instruments used during the testing process.",
+      "type": "str"
+    },
+    "extra_amount": {
+      "description": "Records any additional fees or surcharges applied to the cost of this test parameter.",
+      "type": "float"
+    },
+    "feasibility": {
+      "description": "Determines whether the laboratory has the capability and resources to perform the requested test.",
+      "type": "bool"
+    },
+    "flagged": {
+      "description": "A boolean indicator used to highlight records requiring attention, review, or special handling by staff.",
+      "type": "bool"
+    },
+    "freezed_result": {
+      "description": "Indicates if the analytical test result is locked and prevents further modifications by laboratory staff.",
+      "type": "bool"
+    },
+    "gross_order_amount": {
+      "description": "Represents the total financial value of the order before any discounts or adjustments are applied.",
+      "type": "float"
+    },
+    "index": {
+      "description": "A sequential integer used to uniquely order or sort individual entries within the collection.",
+      "type": "int"
+    },
+    "indexForParameterGroup": {
+      "description": "Determines the relative display order of this specific parameter within its broader testing group.",
+      "type": "int"
+    },
+    "joint_order": {
+      "description": "Flag indicating if this laboratory test is part of a combined order spanning multiple requests.",
+      "type": "bool"
+    },
+    "limit_to": {
+      "description": "Defines the acceptable range or maximum threshold for the laboratory test result.",
+      "type": "str"
+    },
+    "manufactured_as_customer": {
+      "description": "Specifies if the test sample was produced according to custom requirements provided by the client.",
+      "type": "bool"
+    },
+    "measuring_unit.code": {
+      "description": "The unique system identifier for the unit of measurement used in the test result.",
+      "type": "str"
+    },
+    "measuring_unit.name": {
+      "description": "The human-readable label for the scale or unit applied to the test measurement.",
+      "type": "str"
+    },
+    "method.code": {
+      "description": "The unique internal identifier for the standardized laboratory protocol used to perform the test.",
+      "type": "str"
+    },
+    "method.name": {
+      "description": "The descriptive title or official reference number of the technical procedure used for testing.",
+      "type": "str"
+    },
+    "method_names": {
+      "description": "A string containing the descriptive names of the methodologies applied to this specific test parameter.",
+      "type": "str"
+    },
+    "nabl_Scope": {
+      "description": "Indicates if the performed test falls within the laboratory's NABL accreditation scope.",
+      "type": "bool"
+    },
+    "name": {
+      "description": "The full descriptive identifier for the parameter, including product context and test specifications.",
+      "type": "str"
+    },
+    "net_amount": {
+      "description": "The final calculated monetary value for this specific test parameter after discounts.",
+      "type": "float"
+    },
+    "net_order_amount": {
+      "description": "The final total payable amount for the order after applying all applicable deductions.",
+      "type": "float"
+    },
+    "no_of_injection": {
+      "description": "The number of replicate injections performed during chromatographic or similar instrumental analysis.",
+      "type": "int"
+    },
+    "no_of_injection2": {
+      "description": "A secondary count of additional instrument injections required for the specific test protocol.",
+      "type": "int"
+    },
+    "no_of_samples": {
+      "description": "The total number of physical samples provided for the execution of this specific test.",
+      "type": "int"
+    },
+    "no_of_test_conditions": {
+      "description": "The count of distinct experimental settings or environmental conditions applied during testing.",
+      "type": "int"
+    },
+    "offer_rate": {
+      "description": "The quoted price rate offered to the client for performing this specific test.",
+      "type": "float"
+    },
+    "onhold": {
+      "description": "A flag indicating that the testing process for this parameter is temporarily suspended.",
+      "type": "bool"
+    },
+    "order.code": {
+      "description": "The unique identifying alphanumeric code assigned to the laboratory test order.",
+      "type": "str"
+    },
+    "order.name": {
+      "description": "The display name or reference string associated with the primary laboratory order.",
+      "type": "str"
+    },
+    "order_date": {
+      "description": "The timestamp indicating when the specific testing order was officially placed.",
+      "type": "datetime"
+    },
+    "order_discount_amount": {
+      "description": "The total currency value subtracted from the order cost due to applied discounts.",
+      "type": "float"
+    },
+    "order_effective_rate": {
+      "description": "The final adjusted pricing rate applied to this order after all negotiations or discounts.",
+      "type": "float"
+    },
+    "order_quantity": {
+      "description": "The total number of units or test items requested under this specific order.",
+      "type": "int"
+    },
+    "packing_mode": {
+      "description": "Describes the type of container or packaging method used for the sample being tested.",
+      "type": "str"
+    },
+    "paramSequence": {
+      "description": "A unique identifier or index used to determine the display sequence of this parameter.",
+      "type": "int"
+    },
+    "param_category.code": {
+      "description": "The unique system identifier for the group or category of the test parameter.",
+      "type": "str"
+    },
+    "param_category.name": {
+      "description": "The descriptive classification, such as chemical or physical, under which this parameter is grouped.",
+      "type": "str"
+    },
+    "param_decimal_place": {
+      "description": "Defines the required precision for the numeric representation of the test result.",
+      "type": "int"
+    },
+    "parameter.code": {
+      "description": "The unique internal system identifier assigned to the specific test parameter being performed.",
+      "type": "str"
+    },
+    "parameter.name": {
+      "description": "The formal name of the specific chemical or physical property being measured.",
+      "type": "str"
+    },
+    "parameterOutSourceStatus": {
+      "description": "Indicates whether this specific test is performed by an external laboratory rather than in-house.",
+      "type": "bool"
+    },
+    "parameter_decimal_place": {
+      "description": "Specifies the number of decimal digits required for reporting the specific parameter's value.",
+      "type": "int"
+    },
+    "parameter_quantum": {
+      "description": "The specific quantitative volume or amount of the parameter being evaluated in the test.",
+      "type": "float"
+    },
+    "per_sample_net_rate": {
+      "description": "The net cost calculated for processing a single individual sample for this parameter.",
+      "type": "float"
+    },
+    "product.code": {
+      "description": "The unique identifier for the product type or specific item undergoing laboratory testing.",
+      "type": "str"
+    },
+    "product.name": {
+      "description": "Identifies the specific physical item or trade name of the product submitted for laboratory testing.",
+      "type": "str"
+    },
+    "product_test_master.code": {
+      "description": "A unique identifier for a pre-defined configuration of laboratory tests assigned to a specific product.",
+      "type": "str"
+    },
+    "product_test_master.name": {
+      "description": "A descriptive label detailing the product, testing category, industry standard, and specific parameter to be analyzed.",
+      "type": "str"
+    },
+    "qty": {
+      "description": "Indicates the numerical count of test units or samples being processed in the current order.",
+      "type": "int"
+    },
+    "quantum_rate": {
+      "description": "Defines the calculated financial rate or service cost associated with a specific quantity of test parameters.",
+      "type": "float"
+    },
+    "quotation.code": {
+      "description": "The unique reference string assigned to the commercial quotation linked to this test order.",
+      "type": "str"
+    },
+    "quotation.name": {
+      "description": "The display identifier or label for the service quotation applied to this order.",
+      "type": "str"
+    },
+    "quotation_effective_rate": {
+      "description": "The final, adjusted rate applied to the test after accounting for discounts or contractual terms.",
+      "type": "float"
+    },
+    "quotation_rate": {
+      "description": "The base service rate per unit as defined in the associated commercial quotation.",
+      "type": "float"
+    },
+    "rate_per_injection": {
+      "description": "Represents the specific fee charged for instrumentation runs or chemical injections required during analysis.",
+      "type": "float"
+    },
+    "refCode": {
+      "description": "An internal alphanumeric reference code used to categorize or group testing entries for administrative tracking.",
+      "type": "str"
+    },
+    "review_selected": {
+      "description": "A toggle indicating if the test parameter has been marked for formal validation or administrative review.",
+      "type": "bool"
+    },
+    "sale_rate": {
+      "description": "The final transaction price per test unit to be billed to the laboratory client.",
+      "type": "float"
+    },
+    "sampleCondition": {
+      "description": "Describes the physical state or integrity of the received specimen upon arrival at the laboratory.",
+      "type": "str"
+    },
+    "sample_booking.code": {
+      "description": "The unique system-generated identifier for the inward entry or registration record of a laboratory sample.",
+      "type": "str"
+    },
+    "sample_booking.name": {
+      "description": "A concatenated identifier containing the client name, booking sequence, and laboratory location associated with the sample.",
+      "type": "str"
+    },
+    "sample_image[].bucket": {
+      "description": "Specifies the cloud storage container where the associated supporting documentation or image is hosted.",
+      "type": "str"
+    },
+    "sample_image[].capKey": {
+      "description": "The unique path identifier for retrieving the specific document stored in the remote file system.",
+      "type": "str"
+    },
+    "sample_image[].caseId": {
+      "description": "A database reference ID linking the uploaded document to a specific laboratory case or session.",
+      "type": "str"
+    },
+    "sample_image[].customEntry": {
+      "description": "A flag indicating if the file record was manually entered rather than automatically generated by the system.",
+      "type": "bool"
+    },
+    "sample_image[].fileExt": {
+      "description": "The file format or extension of the attached document, such as PDF or XLSX.",
+      "type": "str"
+    },
+    "sample_image[].fileSize": {
+      "description": "The total size of the uploaded document in bytes.",
+      "type": "Int64"
+    },
+    "sample_image[].folder": {
+      "description": "A flag denoting whether the record represents a directory structure rather than an individual file.",
+      "type": "bool"
+    },
+    "sample_image[].key": {
+      "description": "The full storage object key used for locating and accessing the file in the cloud bucket.",
+      "type": "str"
+    },
+    "sample_image[].pageCount": {
+      "description": "Represents the number of pages contained within the attached document file.",
+      "type": "int"
+    },
+    "sample_image[].publicFile": {
+      "description": "Indicates whether the attached document is accessible via public URL or restricted to internal users.",
+      "type": "bool"
+    },
+    "sample_image[].readyFrView": {
+      "description": "A flag identifying if the document has been processed and is ready for user display.",
+      "type": "bool"
+    },
+    "sample_image[].rollName": {
+      "description": "The original filename or assigned display name of the uploaded document for user reference.",
+      "type": "str"
+    },
+    "sample_image[].srNumber": {
+      "description": "A sequential index number used to order multiple documents attached to a single test record.",
+      "type": "Int64"
+    },
+    "sample_image[].type": {
+      "description": "Categorizes the nature of the document, such as a quotation parameter method or supporting report.",
+      "type": "str"
+    },
+    "sample_name": {
+      "description": "The primary common name given to the specimen for internal tracking and reporting purposes.",
+      "type": "str"
+    },
+    "sample_name_2": {
+      "description": "A secondary or alternative identifier used to refine the classification of the testing specimen.",
+      "type": "str"
+    },
+    "sample_quantity": {
+      "description": "Records the volume or amount of the sample received, typically formatted as a string value.",
+      "type": "str"
+    },
+    "scheduledDate": {
+      "description": "The calendar date and time reserved for performing the specific laboratory test procedure.",
+      "type": "datetime"
+    },
+    "scheduler.code": {
+      "description": "A unique identifier for the laboratory analyst or technician assigned to perform the scheduled test.",
+      "type": "str"
+    },
+    "scheduler.name": {
+      "description": "The full name of the laboratory staff member responsible for executing the assigned test task.",
+      "type": "str"
+    },
+    "sealed_unsealed": {
+      "description": "Notes the integrity of the sample container, specifically whether it arrived sealed or otherwise.",
+      "type": "str"
+    },
+    "section_order.code": {
+      "description": "A unique identifier for the logical grouping or departmental section assigned to the test order.",
+      "type": "str"
+    },
+    "section_order.name": {
+      "description": "The descriptive title of the functional laboratory section responsible for the test process.",
+      "type": "str"
+    },
+    "sequence_no": {
+      "description": "An integer used to define the execution order or priority of the test parameter within the workflow.",
+      "type": "int"
+    },
+    "serialId": {
+      "description": "A unique identifier used for tracking individual test parameter entries within the laboratory order workflow.",
+      "type": "str"
+    },
+    "service_required": {
+      "description": "Indicates the turnaround time priority chosen by the client, such as express or regular processing.",
+      "type": "str"
+    },
+    "signed_unsigned": {
+      "description": "Tracks the current verification or approval status of the test report by laboratory personnel.",
+      "type": "str"
+    },
+    "srNumber": {
+      "description": "A sequential integer used to order or sort specific test parameters within a laboratory testing request.",
+      "type": "Int64"
+    },
+    "standard_limit_type": {
+      "description": "Defines the expected data format for the test result, such as numeric or alpha-numeric ranges.",
+      "type": "str"
+    },
+    "status": {
+      "description": "Indicates if the specific test parameter record is currently active for operations or marked inactive.",
+      "type": "str"
+    },
+    "sub_category.code": {
+      "description": "The unique short-code identifier for the specific laboratory testing domain or product group.",
+      "type": "str"
+    },
+    "sub_category.name": {
+      "description": "The descriptive label for the testing industry category, such as fuel testing or construction materials.",
+      "type": "str"
+    },
+    "sub_category.type": {
+      "description": "Categorizes the sub-category entry as a specific subset type within the laboratory's master data classification.",
+      "type": "str"
+    },
+    "subsequent_discount_amount": {
+      "description": "The flat monetary reduction applied to additional or subsequent testing units for this parameter.",
+      "type": "float"
+    },
+    "subsequent_discount_percent": {
+      "description": "The percentage reduction applied to the cost of additional testing samples of the same type.",
+      "type": "float"
+    },
+    "subsequent_offer_rate": {
+      "description": "The special price offered for repeating this specific test parameter beyond the initial request.",
+      "type": "float"
+    },
+    "supplied_as_customer": {
+      "description": "A flag indicating if the testing sample was provided directly by the customer for evaluation.",
+      "type": "bool"
+    },
+    "test_analyst.name": {
+      "description": "The full name of the laboratory professional responsible for performing or documenting this specific test.",
+      "type": "str"
+    },
+    "test_result": {
+      "description": "The recorded outcome or measurement value obtained from performing the specified laboratory test procedure.",
+      "type": "str"
+    },
+    "test_standard.code": {
+      "description": "The internal reference code corresponding to the specific testing methodology or regulatory protocol used.",
+      "type": "str"
+    },
+    "test_standard.name": {
+      "description": "The formal name of the regulatory or technical standard followed, such as ASTM, FSSAI, or IP.",
+      "type": "str"
+    },
+    "test_status": {
+      "description": "Represents the current stage of the test processing lifecycle from initial booking to final invoice generation.",
+      "type": "str"
+    },
+    "time_in_days": {
+      "description": "The expected duration required to complete the analysis, expressed in the number of working days.",
+      "type": "str"
+    },
+    "total": {
+      "description": "The calculated financial cost or billed amount for performing this specific test parameter.",
+      "type": "float"
+    },
+    "total_injection": {
+      "description": "The number of times a sample is injected into an analytical instrument for this specific test.",
+      "type": "int"
+    },
+    "updateDate": {
+      "description": "The timestamp recording when the test parameter record was last modified in the system.",
+      "type": "datetime"
+    },
+    "updatedBy": {
+      "description": "The system user email address of the individual who last modified this test parameter record.",
+      "type": "str"
+    },
+    "updatedByName": {
+      "description": "The full name of the laboratory staff member who performed the last modification to this entry.",
+      "type": "str"
+    }
+  },
+  "el_orders": {
+    "_class": {
+      "description": "Specifies the fully qualified Java class name for mapping the document to an application object.",
+      "type": "str"
+    },
+    "account.code": {
+      "description": "The unique identification string for the laboratory customer or client account.",
+      "type": "str"
+    },
+    "account.name": {
+      "description": "The descriptive name or designation assigned to the laboratory customer account.",
+      "type": "str"
+    },
+    "actual_tat": {
+      "description": "The total number of days taken to complete the laboratory testing process.",
+      "type": "int"
+    },
+    "add_po_details": {
+      "description": "A flag indicating if additional purchase order details have been provided for the laboratory request.",
+      "type": "bool"
+    },
+    "address_line1": {
+      "description": "The primary street address where the sample originated or where the laboratory work is requested.",
+      "type": "str"
+    },
+    "address_line2": {
+      "description": "The secondary address information, such as building, locality, or district details.",
+      "type": "str"
+    },
+    "altname": {
+      "description": "A secondary reference number or unique internal identifier assigned to the order for tracking.",
+      "type": "str"
+    },
+    "analysis_type": {
+      "description": "The specific category of laboratory investigation or research protocol performed on the sample.",
+      "type": "str"
+    },
+    "appId": {
+      "description": "The identifier for the specific application or platform instance that generated the order.",
+      "type": "str"
+    },
+    "batch_number": {
+      "description": "The production lot or batch identifier associated with the sample being tested.",
+      "type": "str"
+    },
+    "billing_address": {
+      "description": "The primary street address used for issuing invoices and financial documentation.",
+      "type": "str"
+    },
+    "billing_address_line2": {
+      "description": "The secondary address details for the billing entity, such as neighborhood or area.",
+      "type": "str"
+    },
+    "billing_city": {
+      "description": "The city name corresponding to the billing address of the customer.",
+      "type": "str"
+    },
+    "billing_company": {
+      "description": "The formal business or organization name responsible for payment of the testing fees.",
+      "type": "str"
+    },
+    "billing_contact_person": {
+      "description": "The specific representative or individual to be contacted regarding billing and invoicing matters.",
+      "type": "str"
+    },
+    "billing_contact_person_email": {
+      "description": "The electronic mail address of the primary contact person for financial correspondence.",
+      "type": "str"
+    },
+    "billing_country": {
+      "description": "The country where the company responsible for the billing is located.",
+      "type": "str"
+    },
+    "billing_gst": {
+      "description": "The Goods and Services Tax identification number for the customer's billing account.",
+      "type": "str"
+    },
+    "billing_mobile": {
+      "description": "The primary mobile telephone number for the customer's billing contact person.",
+      "type": "str"
+    },
+    "billing_pincode": {
+      "description": "The postal or zip code for the designated billing address.",
+      "type": "str"
+    },
+    "billing_state": {
+      "description": "The state or province associated with the provided billing address.",
+      "type": "str"
+    },
+    "billing_tel": {
+      "description": "The landline telephone number for the billing department or customer contact.",
+      "type": "str"
+    },
+    "booking_type": {
+      "description": "The methodology or protocol used to categorize how the sample was booked into the system.",
+      "type": "str"
+    },
+    "branch.code": {
+      "description": "The unique alphanumeric code identifying the specific laboratory branch or facility.",
+      "type": "str"
+    },
+    "branch.name": {
+      "description": "The display name of the laboratory branch processing the order.",
+      "type": "str"
+    },
+    "brand": {
+      "description": "The commercial brand or label associated with the product being tested.",
+      "type": "str"
+    },
+    "category.code": {
+      "description": "The unique code for the classification of the product under testing.",
+      "type": "str"
+    },
+    "category.name": {
+      "description": "The descriptive label of the product category, such as Bakery Products or Cosmetic Products.",
+      "type": "str"
+    },
+    "category.type": {
+      "description": "The system identifier used to distinguish this classification type from other groupings.",
+      "type": "str"
+    },
+    "city": {
+      "description": "The city location where the sample was collected or registered.",
+      "type": "str"
+    },
+    "compensatoryReason": {
+      "description": "The justification provided for requesting a compensatory action or adjustment on the order.",
+      "type": "str"
+    },
+    "compensatoryStatus": {
+      "description": "The current approval state of the compensatory request within the finance department workflow.",
+      "type": "str"
+    },
+    "compliances": {
+      "description": "A boolean indicator specifying whether the order adheres to mandatory regulatory compliance standards.",
+      "type": "bool"
+    },
+    "condition_to_maintain": {
+      "description": "The storage or environmental requirements necessary to preserve sample integrity during transit or testing.",
+      "type": "str"
+    },
+    "cost_rate": {
+      "description": "The financial cost or testing rate applied to this specific order or analysis item.",
+      "type": "float"
+    },
+    "country": {
+      "description": "The country where the sample originated or where the order was placed.",
+      "type": "str"
+    },
+    "createdBy": {
+      "description": "The email address of the system user who initially created the order entry.",
+      "type": "str"
+    },
+    "createdByName": {
+      "description": "The full name of the user who registered the laboratory order in the system.",
+      "type": "str"
+    },
+    "createdDate": {
+      "description": "The exact date and time the order record was created in the database.",
+      "type": "datetime"
+    },
+    "credit_period": {
+      "description": "Defines the number of days allowed for the client to complete payment after receiving the laboratory invoice.",
+      "type": "int"
+    },
+    "customEntry": {
+      "description": "Indicates if the order details were manually inputted into the system rather than imported from a template.",
+      "type": "bool"
+    },
+    "customer.code": {
+      "description": "A unique internal identifier assigned to each laboratory client for database indexing and retrieval.",
+      "type": "str"
+    },
+    "customer.name": {
+      "description": "The legal name of the organization or entity requesting laboratory testing services, optionally including location details.",
+      "type": "str"
+    },
+    "customer_rate_applicable": {
+      "description": "Determines whether specific pre-negotiated service pricing rates apply to this customer's testing order.",
+      "type": "bool"
+    },
+    "customer_tat": {
+      "description": "The agreed-upon turnaround time in days for completing the analysis requested by a specific client.",
+      "type": "int"
+    },
+    "department.code": {
+      "description": "A short alphanumeric abbreviation representing the specific laboratory testing department responsible for the order.",
+      "type": "str"
+    },
+    "department.name": {
+      "description": "The formal name of the laboratory testing department or functional division performing the analysis.",
+      "type": "str"
+    },
+    "department.type": {
+      "description": "Categorizes the operational classification of the department within the lab's organizational hierarchy.",
+      "type": "str"
+    },
+    "designation": {
+      "description": "The professional job title or role held by the primary contact person associated with the order.",
+      "type": "str"
+    },
+    "different_invoicing_address": {
+      "description": "Specifies if the billing address for this order differs from the primary registered customer address.",
+      "type": "bool"
+    },
+    "directOrder": {
+      "description": "Flags whether the order was submitted directly by a client or originated through an intermediary channel.",
+      "type": "bool"
+    },
+    "disciplineNumber": {
+      "description": "A numerical identifier used to track the specific scientific discipline or testing domain associated with the order.",
+      "type": "int"
+    },
+    "discount_amount": {
+      "description": "The total currency value subtracted from the order cost due to negotiated or promotional price reductions.",
+      "type": "float"
+    },
+    "discount_percent": {
+      "description": "The percentage value applied to the subtotal to calculate the final reduction in testing fees.",
+      "type": "float"
+    },
+    "drugDeptVerificationDate": {
+      "description": "The timestamp when the pharmaceutical or drug testing department officially reviewed and validated the order results.",
+      "type": "datetime"
+    },
+    "email": {
+      "description": "The primary electronic mail address for correspondence regarding test status, reports, and billing documentation.",
+      "type": "str"
+    },
+    "expected_due_date": {
+      "description": "The target calendar date by which the laboratory is committed to delivering the final testing report.",
+      "type": "datetime"
+    },
+    "extra_amount": {
+      "description": "Represents any supplemental costs or service surcharges added to the baseline price of the testing order.",
+      "type": "float"
+    },
+    "final_amount": {
+      "description": "The total financial obligation for the client after applying all discounts and extra charges.",
+      "type": "float"
+    },
+    "finalizer.code": {
+      "description": "The identification code for the laboratory staff member authorized to approve and sign off on test reports.",
+      "type": "str"
+    },
+    "finalizer.name": {
+      "description": "The full name of the laboratory employee responsible for the final review and authorization of the order.",
+      "type": "str"
+    },
+    "finalizing_date": {
+      "description": "The exact date and time the order results were officially verified and cleared for customer release.",
+      "type": "datetime"
+    },
+    "first_name": {
+      "description": "The given name of the contact person associated with the sample submission or account management.",
+      "type": "str"
+    },
+    "groupName": {
+      "description": "Indicates whether the order is grouped under a specific category or collection of related test requests.",
+      "type": "bool"
+    },
+    "group_discipline[].discipline_text.code": {
+      "description": "The unique code identifying a specific scientific discipline involved in the grouped testing process.",
+      "type": "str"
+    },
+    "group_discipline[].discipline_text.name": {
+      "description": "The descriptive name of the scientific field, such as chemical or biological testing, assigned to the order.",
+      "type": "str"
+    },
+    "group_discipline[].discipline_text.selected": {
+      "description": "A boolean flag indicating if this specific scientific discipline is active for the current order.",
+      "type": "bool"
+    },
+    "group_discipline[].group.code": {
+      "description": "The identifier for the specific industry or regulatory testing group the order belongs to.",
+      "type": "str"
+    },
+    "group_discipline[].group.name": {
+      "description": "The descriptive category identifying the industry sector or product type undergoing laboratory testing.",
+      "type": "str"
+    },
+    "group_discipline[].param_category.code": {
+      "description": "The code for the specific category of parameters or testing criteria included in the group analysis.",
+      "type": "str"
+    },
+    "group_discipline[].param_category.name": {
+      "description": "The name of the parameter set or testing category used to organize specific lab analyses.",
+      "type": "str"
+    },
+    "group_discipline[].param_category.selected": {
+      "description": "Shows if this specific parameter category is enabled for selection within the testing group.",
+      "type": "bool"
+    },
+    "gst_no": {
+      "description": "The Goods and Services Tax identification number assigned to the customer for tax compliance purposes.",
+      "type": "str"
+    },
+    "has_header_note": {
+      "description": "A flag indicating if special instructions or header information are attached to the official lab report.",
+      "type": "bool"
+    },
+    "headerNoteDetails": {
+      "description": "Represents the content or status of additional explanatory notes included at the top of the order document.",
+      "type": "bool"
+    },
+    "hold_details": {
+      "description": "Signals whether the order is currently suspended or on hold due to pending clarifications or issues.",
+      "type": "bool"
+    },
+    "invoice.code": {
+      "description": "The unique serial number assigned to the financial invoice generated for this specific lab order.",
+      "type": "str"
+    },
+    "invoice.name": {
+      "description": "The display identifier used for the invoice file associated with this order record.",
+      "type": "str"
+    },
+    "invoiceGenerationStatus": {
+      "description": "Tracks the current progress or status of the billing process, such as whether the invoice has been issued.",
+      "type": "str"
+    },
+    "invoice_date": {
+      "description": "The date the official invoice was issued for the lab testing services.",
+      "type": "datetime"
+    },
+    "invoicer.code": {
+      "description": "The unique alphanumeric identifier assigned to the staff member who generated the invoice.",
+      "type": "str"
+    },
+    "invoicer.name": {
+      "description": "The full name and department of the employee responsible for preparing the invoice.",
+      "type": "str"
+    },
+    "last_name": {
+      "description": "The surname of the primary client or contact person associated with the laboratory order.",
+      "type": "str"
+    },
+    "letter_ref_date": {
+      "description": "The date associated with the official client reference letter or communication document.",
+      "type": "datetime"
+    },
+    "letter_ref_no": {
+      "description": "The internal tracking or document number for the client's reference letter.",
+      "type": "str"
+    },
+    "manufactured_as_customer": {
+      "description": "Indicates if the product manufacturer is also registered as the primary customer in the system.",
+      "type": "bool"
+    },
+    "mark_amendment": {
+      "description": "A flag indicating whether the current test order has been flagged for a revision or amendment.",
+      "type": "bool"
+    },
+    "mfgLicenseNumber": {
+      "description": "The regulatory manufacturing license number associated with the client's product or facility.",
+      "type": "str"
+    },
+    "microBiologicalDetails[].bucket": {
+      "description": "The storage bucket name in the cloud infrastructure where the microbial report document resides.",
+      "type": "str"
+    },
+    "microBiologicalDetails[].capKey": {
+      "description": "The unique system-generated path key for accessing the specific microbiological document.",
+      "type": "str"
+    },
+    "microBiologicalDetails[].caseId": {
+      "description": "The unique database identifier linking the document to a specific microbiological test case.",
+      "type": "str"
+    },
+    "microBiologicalDetails[].customEntry": {
+      "description": "Specifies if the microbiological record was added manually rather than through automated system processing.",
+      "type": "bool"
+    },
+    "microBiologicalDetails[].fileExt": {
+      "description": "The file format extension for the uploaded microbiological analysis document.",
+      "type": "str"
+    },
+    "microBiologicalDetails[].fileSize": {
+      "description": "The total size of the uploaded microbiological report file in bytes.",
+      "type": "Int64"
+    },
+    "microBiologicalDetails[].folder": {
+      "description": "Determines whether this record represents a directory or a specific file.",
+      "type": "bool"
+    },
+    "microBiologicalDetails[].key": {
+      "description": "The full storage path or URI used to retrieve the microbiological file from the server.",
+      "type": "str"
+    },
+    "microBiologicalDetails[].pageCount": {
+      "description": "The number of pages contained within the attached microbiological report document.",
+      "type": "int"
+    },
+    "microBiologicalDetails[].publicFile": {
+      "description": "Indicates whether the document is accessible to external users or restricted to internal lab staff.",
+      "type": "bool"
+    },
+    "microBiologicalDetails[].readyFrView": {
+      "description": "A flag showing if the microbiological document has been processed and is ready for viewing.",
+      "type": "bool"
+    },
+    "microBiologicalDetails[].rollName": {
+      "description": "The original filename of the document as it appears in the lab's digital system.",
+      "type": "str"
+    },
+    "microBiologicalDetails[].srNumber": {
+      "description": "A sequential serial number for identifying the specific microbiological document record.",
+      "type": "Int64"
+    },
+    "microBiologicalDetails[].type": {
+      "description": "The category classification of the microbiological record, such as a user-uploaded file.",
+      "type": "str"
+    },
+    "micro_bio_date": {
+      "description": "The specific date when the microbiological analysis was performed or recorded.",
+      "type": "datetime"
+    },
+    "micro_biologist.code": {
+      "description": "The unique ID for the lab scientist who conducted the microbiological testing.",
+      "type": "str"
+    },
+    "micro_biologist.name": {
+      "description": "The professional name of the microbiologist responsible for the analysis.",
+      "type": "str"
+    },
+    "mobile": {
+      "description": "The contact telephone number for the customer or the entity placing the lab order.",
+      "type": "str"
+    },
+    "mode": {
+      "description": "The method by which the test sample was received or collected by the laboratory.",
+      "type": "str"
+    },
+    "nablSerial": {
+      "description": "The sequential serial number assigned for NABL accreditation documentation purposes.",
+      "type": "int"
+    },
+    "nabl_scope": {
+      "description": "Indicates whether the test falls within the laboratory's NABL accredited testing scope.",
+      "type": "bool"
+    },
+    "nabl_ulr_no": {
+      "description": "The unique laboratory report (ULR) number required for NABL-compliant test certificates.",
+      "type": "str"
+    },
+    "name": {
+      "description": "The unique identifier or reference code assigned to this specific laboratory order.",
+      "type": "str"
+    },
+    "net_amount": {
+      "description": "The final financial total due for the laboratory services after all adjustments.",
+      "type": "float"
+    },
+    "numberOfTatInDay": {
+      "description": "The Turnaround Time (TAT) in days promised or allowed for completing the lab analysis.",
+      "type": "int"
+    },
+    "offer_rate": {
+      "description": "The quoted price per unit or service offered to the client for this order.",
+      "type": "float"
+    },
+    "onhold": {
+      "description": "A status flag indicating the order has been paused or requires further internal review.",
+      "type": "bool"
+    },
+    "orderMailStatus": {
+      "description": "Current status of automated email communications regarding this test order's report or notification.",
+      "type": "str"
+    },
+    "orderScope": {
+      "description": "Classifies the order based on whether it requires NABL accreditation or non-accredited reporting.",
+      "type": "str"
+    },
+    "orderVerificationStatus": {
+      "description": "The current state of the administrative or technical verification process for the order.",
+      "type": "str"
+    },
+    "order_booker.code": {
+      "description": "The unique identifier for the employee who initially registered or booked the lab order.",
+      "type": "str"
+    },
+    "order_booker.name": {
+      "description": "The identity of the employee responsible for recording the laboratory order request into the system.",
+      "type": "str"
+    },
+    "order_date": {
+      "description": "The specific timestamp indicating when the laboratory order was formally created or initialized.",
+      "type": "datetime"
+    },
+    "order_status": {
+      "description": "The current lifecycle phase of the laboratory order, such as booked, finalized, or cancelled.",
+      "type": "str"
+    },
+    "packing_mode": {
+      "description": "The container type or physical packaging standard used for the sample received at the laboratory.",
+      "type": "str"
+    },
+    "paramterResultOutOfRange": {
+      "description": "A flag indicating whether any tested sample parameters have deviated from the defined acceptable limits.",
+      "type": "bool"
+    },
+    "per_sample_total": {
+      "description": "The calculated cost or pricing amount associated with processing an individual sample within the order.",
+      "type": "float"
+    },
+    "phone": {
+      "description": "The contact telephone number associated with the client or entity requesting the laboratory testing services.",
+      "type": "str"
+    },
+    "pincode": {
+      "description": "The postal or area code associated with the location of the client or the sample origin.",
+      "type": "str"
+    },
+    "populate_fields": {
+      "description": "A control toggle to determine if additional metadata fields should be automatically filled in the record.",
+      "type": "bool"
+    },
+    "populate_for_report_issue": {
+      "description": "A flag indicating if specific data needs to be auto-filled for generated laboratory report issues.",
+      "type": "bool"
+    },
+    "product.code": {
+      "description": "The unique alphanumeric identifier assigned to the specific item or material being tested.",
+      "type": "str"
+    },
+    "product.name": {
+      "description": "The descriptive common name of the product or substance submitted for laboratory analysis.",
+      "type": "str"
+    },
+    "product_wise_pricing": {
+      "description": "A flag indicating if the order pricing is calculated based on specific product-level fee structures.",
+      "type": "bool"
+    },
+    "qa.code": {
+      "description": "The unique code assigned to the quality assurance analyst overseeing the order process.",
+      "type": "str"
+    },
+    "qa.name": {
+      "description": "The full name of the quality assurance professional responsible for managing this laboratory order.",
+      "type": "str"
+    },
+    "qaDate": {
+      "description": "The date on which the quality assurance assessment or verification was performed on the order.",
+      "type": "datetime"
+    },
+    "qrcodeS3Path[].bucket": {
+      "description": "The name of the AWS S3 storage bucket where the associated QR code file is hosted.",
+      "type": "str"
+    },
+    "qrcodeS3Path[].capKey": {
+      "description": "The specific path key used to retrieve the QR code image file within the S3 storage.",
+      "type": "str"
+    },
+    "qrcodeS3Path[].caseId": {
+      "description": "The unique identifier linking the QR code file to a specific laboratory case or session.",
+      "type": "str"
+    },
+    "qrcodeS3Path[].customEntry": {
+      "description": "A flag indicating if the file entry was manually created rather than system-generated.",
+      "type": "bool"
+    },
+    "qrcodeS3Path[].fileExt": {
+      "description": "The file format extension, such as jpg, of the stored QR code document.",
+      "type": "str"
+    },
+    "qrcodeS3Path[].fileSize": {
+      "description": "The storage size of the QR code file measured in bytes.",
+      "type": "Int64"
+    },
+    "qrcodeS3Path[].folder": {
+      "description": "A flag indicating whether the entry represents a directory structure rather than a single file.",
+      "type": "bool"
+    },
+    "qrcodeS3Path[].key": {
+      "description": "The full object key path used to access the QR code file within the S3 bucket.",
+      "type": "str"
+    },
+    "qrcodeS3Path[].pageCount": {
+      "description": "The total number of pages contained within the referenced QR code document.",
+      "type": "int"
+    },
+    "qrcodeS3Path[].publicFile": {
+      "description": "A flag indicating if the QR code file is accessible for public or external viewing.",
+      "type": "bool"
+    },
+    "qrcodeS3Path[].readyFrView": {
+      "description": "A status flag indicating if the file has been processed and is ready for user viewing.",
+      "type": "bool"
+    },
+    "qrcodeS3Path[].rollName": {
+      "description": "The identifier or label of the specific file roll or batch containing the QR code.",
+      "type": "str"
+    },
+    "qrcodeS3Path[].srNumber": {
+      "description": "The serial number assigned to the specific QR code entry for tracking purposes.",
+      "type": "Int64"
+    },
+    "qrcodeS3Path[].type": {
+      "description": "The classification or category code associated with the generated QR code entry.",
+      "type": "str"
+    },
+    "quotation_effective_rate": {
+      "description": "The final unit price applied to the testing services after any negotiations or discounts.",
+      "type": "float"
+    },
+    "quotation_letter.code": {
+      "description": "The unique tracking reference code for the official quotation document issued to the client.",
+      "type": "str"
+    },
+    "quotation_letter.info.department.code": {
+      "description": "The internal code of the primary laboratory department responsible for the quoted services.",
+      "type": "str"
+    },
+    "quotation_letter.info.department.name": {
+      "description": "The name of the laboratory department, such as food or cosmetics, handling the order.",
+      "type": "str"
+    },
+    "quotation_letter.info.department.type": {
+      "description": "The categorical type of the laboratory department, typically identified as a department entity.",
+      "type": "str"
+    },
+    "quotation_letter.info.departments[].code": {
+      "description": "The list of codes for all laboratory departments involved in the quoted service order.",
+      "type": "str"
+    },
+    "quotation_letter.info.departments[].name": {
+      "description": "The list of names of all laboratory departments providing services under this quotation.",
+      "type": "str"
+    },
+    "quotation_letter.info.departments[].type": {
+      "description": "The functional classification assigned to the departments listed in the quotation details.",
+      "type": "str"
+    },
+    "quotation_letter.name": {
+      "description": "The formal identifier or name of the specific quotation revision assigned to this order.",
+      "type": "str"
+    },
+    "quotation_lists[].code": {
+      "description": "The list of unique reference codes identifying individual quotation entries associated with the order.",
+      "type": "str"
+    },
+    "quotation_lists[].info.company_name": {
+      "description": "The name of the client organization or business entity submitting the sample for testing.",
+      "type": "str"
+    },
+    "quotation_lists[].info.discount_amount": {
+      "description": "The total monetary value subtracted from the order cost, likely representing a calculated price reduction.",
+      "type": "int"
+    },
+    "quotation_lists[].info.discount_percent": {
+      "description": "The percentage rate applied to calculate the total discount for the quoted testing service.",
+      "type": "float"
+    },
+    "quotation_lists[].info.final_amount": {
+      "description": "The concluding price for the service after applying discounts and additional charges to the net amount.",
+      "type": "int"
+    },
+    "quotation_lists[].info.first_name": {
+      "description": "The first name of the contact person associated with the client company for this order.",
+      "type": "str"
+    },
+    "quotation_lists[].info.net_amount": {
+      "description": "The subtotal of the order calculated before applying further adjustments or final tax considerations.",
+      "type": "int"
+    },
+    "quotation_lists[].info.per_sample_total": {
+      "description": "The calculated cost allocated specifically to an individual sample within the scope of the quotation.",
+      "type": "int"
+    },
+    "quotation_lists[].info.product.code": {
+      "description": "The unique identification string assigned to a specific type of product being submitted for analysis.",
+      "type": "str"
+    },
+    "quotation_lists[].info.product.name": {
+      "description": "The common or trade name of the product being tested in the laboratory.",
+      "type": "str"
+    },
+    "quotation_lists[].info.sample_name": {
+      "description": "The specific descriptor or label provided by the client for the physical sample submitted for testing.",
+      "type": "str"
+    },
+    "quotation_lists[].info.sampling_charge": {
+      "description": "The fee billed for the laboratory's efforts in collecting or processing the sample.",
+      "type": "int"
+    },
+    "quotation_lists[].info.test_statndard.code": {
+      "description": "The unique identification code corresponding to a specific regulatory or technical quality standard.",
+      "type": "str"
+    },
+    "quotation_lists[].info.test_statndard.name": {
+      "description": "The formal title or regulatory reference of the quality standard applied to the product analysis.",
+      "type": "str"
+    },
+    "quotation_lists[].info.total": {
+      "description": "The aggregate cost for the quotation item before any final adjustments are applied.",
+      "type": "int"
+    },
+    "quotation_lists[].info.unit_price": {
+      "description": "The base cost assigned to a single unit of the product analysis requested.",
+      "type": "int"
+    },
+    "quotation_lists[].name": {
+      "description": "A composite identifier combining order sequence and sample details for internal tracking and documentation.",
+      "type": "str"
+    },
+    "quotation_rate": {
+      "description": "The base financial rate per unit used to calculate the preliminary cost for the requested quotation.",
+      "type": "float"
+    },
+    "rawDataCollected": {
+      "description": "A status flag indicating whether the primary laboratory measurements have been successfully captured.",
+      "type": "bool"
+    },
+    "refCode": {
+      "description": "A unique internal reference code used to categorize the origin or type of the testing request.",
+      "type": "str"
+    },
+    "remarkReasonStatus": {
+      "description": "A boolean flag indicating if a specific reason has been provided for an associated remark.",
+      "type": "bool"
+    },
+    "remarks": {
+      "description": "General notes or supplementary information added to the order record by laboratory staff.",
+      "type": "str"
+    },
+    "reportAmendSerial": {
+      "description": "The version or serial count representing the number of times the lab report has been revised.",
+      "type": "int"
+    },
+    "reportMailStatus": {
+      "description": "The current delivery status of the test report to the client via email channels.",
+      "type": "str"
+    },
+    "report_amendment_required": {
+      "description": "A flag indicating whether a previously issued report needs correction or formal updating.",
+      "type": "bool"
+    },
+    "report_date": {
+      "description": "The calendar date on which the final laboratory test report was generated.",
+      "type": "datetime"
+    },
+    "report_number": {
+      "description": "The unique document identifier assigned to the finalized laboratory report for tracking purposes.",
+      "type": "str"
+    },
+    "report_part_a[].analysisEndDate": {
+      "description": "The final calendar date when all laboratory testing procedures for this specific batch were completed.",
+      "type": "str"
+    },
+    "report_part_a[].analysisStartDate": {
+      "description": "The initial calendar date when laboratory analysis officially began for the specific batch.",
+      "type": "str"
+    },
+    "report_part_a[].batch_number": {
+      "description": "The manufacturer-provided identifier for the specific production lot of the sample.",
+      "type": "str"
+    },
+    "report_part_a[].batch_size": {
+      "description": "The stated quantity or volume of the production lot from which the sample was drawn.",
+      "type": "str"
+    },
+    "report_part_a[].brand": {
+      "description": "The commercial brand or trademark associated with the product under evaluation.",
+      "type": "str"
+    },
+    "report_part_a[].declared_value": {
+      "description": "The value or specification claimed by the manufacturer for the product being tested.",
+      "type": "str"
+    },
+    "report_part_a[].expiry_date": {
+      "description": "The date indicating when the product's shelf life or period of effectiveness concludes.",
+      "type": "str"
+    },
+    "report_part_a[].grade": {
+      "description": "The classification or quality level designated for the submitted sample.",
+      "type": "str"
+    },
+    "report_part_a[].mfg_by": {
+      "description": "The name of the entity or factory responsible for manufacturing the sample.",
+      "type": "str"
+    },
+    "report_part_a[].mfg_date": {
+      "description": "The calendar date on which the product was produced by the manufacturer.",
+      "type": "str"
+    },
+    "report_part_a[].order_date": {
+      "description": "The calendar date when the testing request was formally received and entered into the system.",
+      "type": "str"
+    },
+    "report_part_a[].packing_mode": {
+      "description": "The physical format or container type used to pack the sample for transport and storage.",
+      "type": "str"
+    },
+    "report_part_a[].remarks": {
+      "description": "Specific observations or details related to the sample condition or batch context.",
+      "type": "str"
+    },
+    "report_part_a[].sampleCondition": {
+      "description": "A description of the physical state or integrity of the sample upon arrival at the laboratory.",
+      "type": "str"
+    },
+    "report_part_a[].sampleRemark": {
+      "description": "Optional notes or supplementary observations recorded by the laboratory staff regarding the sample status.",
+      "type": "str"
+    },
+    "report_part_a[].sampleSource": {
+      "description": "Describes the origin or specific location from which the submitted sample was obtained.",
+      "type": "str"
+    },
+    "report_part_a[].sample_name": {
+      "description": "The primary product name or descriptive identifier assigned to the test sample.",
+      "type": "str"
+    },
+    "report_part_a[].sample_name_2": {
+      "description": "An alternative or secondary nomenclature used for identifying the product in the laboratory system.",
+      "type": "str"
+    },
+    "report_part_a[].sample_quantity": {
+      "description": "The numerical count or volume of the sample units received for analysis.",
+      "type": "str"
+    },
+    "report_part_a[].sealed_unsealed": {
+      "description": "Indicates the physical integrity status of the sample packaging upon arrival at the facility.",
+      "type": "str"
+    },
+    "report_part_a[].signed_unsigned": {
+      "description": "Records whether required documentation or labels associated with the sample contain authorized signatures.",
+      "type": "str"
+    },
+    "report_part_a[].submitted_by": {
+      "description": "Identifies the specific client entity or department that physically delivered or registered the sample.",
+      "type": "str"
+    },
+    "report_part_a[].supplied_by": {
+      "description": "The name of the vendor or manufacturer responsible for providing the material under inspection.",
+      "type": "str"
+    },
+    "report_part_a[].testing_date": {
+      "description": "The scheduled or actual date when laboratory analysis of this specific sample is performed.",
+      "type": "str"
+    },
+    "report_serial": {
+      "description": "A sequential numeric index used to identify individual reports within a specific collection or batch.",
+      "type": "int"
+    },
+    "report_series": {
+      "description": "A category or departmental code prefix used to classify the type of laboratory report generated.",
+      "type": "str"
+    },
+    "report_version": {
+      "description": "Tracks the iteration count of the report to manage updates and revisions of laboratory results.",
+      "type": "int"
+    },
+    "reporting_address": {
+      "description": "The full physical street address associated with the client entity receiving the test report.",
+      "type": "str"
+    },
+    "reporting_city": {
+      "description": "The city location of the company or entity commissioning the laboratory test.",
+      "type": "str"
+    },
+    "reporting_company": {
+      "description": "The legal name of the organization requesting the testing services for a specific order.",
+      "type": "str"
+    },
+    "reporting_contact_person": {
+      "description": "The primary individual designated as the point of contact for the client organization.",
+      "type": "str"
+    },
+    "reporting_contact_person_email": {
+      "description": "The electronic mail address for the designated contact person to receive official laboratory correspondence.",
+      "type": "str"
+    },
+    "reporting_country": {
+      "description": "The nation where the client or company requesting the laboratory services is based.",
+      "type": "str"
+    },
+    "reporting_gst": {
+      "description": "The Goods and Services Tax identification number assigned to the client for financial record-keeping.",
+      "type": "str"
+    },
+    "reporting_mobile": {
+      "description": "The primary mobile telephone number for the designated client contact person.",
+      "type": "str"
+    },
+    "reporting_pincode": {
+      "description": "The postal code associated with the registered address of the client organization.",
+      "type": "str"
+    },
+    "reporting_state": {
+      "description": "The administrative state or province where the client company is located.",
+      "type": "str"
+    },
+    "reporting_tel": {
+      "description": "The landline or alternate contact telephone number for the client organization.",
+      "type": "str"
+    },
+    "revert": {
+      "description": "A flag indicating whether a report or order entry has been rolled back or returned for correction.",
+      "type": "bool"
+    },
+    "review_note": {
+      "description": "Internal comments or simple status flags entered by staff during the report review process.",
+      "type": "str"
+    },
+    "review_remarks": {
+      "description": "Detailed technical findings, regulatory compliance statements, or expert opinions provided by the reviewer.",
+      "type": "str"
+    },
+    "reviewer.code": {
+      "description": "The unique short identifier for the technical person responsible for reviewing the laboratory data.",
+      "type": "str"
+    },
+    "reviewer.name": {
+      "description": "The full name of the authorized laboratory personnel who performed the final verification of results.",
+      "type": "str"
+    },
+    "reviewing_date": {
+      "description": "The timestamp indicating when the laboratory results were formally verified and approved by the reviewer.",
+      "type": "datetime"
+    },
+    "sale_rate": {
+      "description": "The financial cost or service fee billed for the laboratory testing performed in this order.",
+      "type": "float"
+    },
+    "sales_executive.code": {
+      "description": "The internal code for the sales representative assigned to the client account.",
+      "type": "str"
+    },
+    "sales_executive.name": {
+      "description": "The full name of the sales representative who manages the relationship with this specific client.",
+      "type": "str"
+    },
+    "sampleCondition": {
+      "description": "A qualitative assessment of the physical state or quality of the sample upon lab receipt.",
+      "type": "str"
+    },
+    "sample_booking.code": {
+      "description": "A unique identifier used for tracking the registration and intake process of the sample.",
+      "type": "str"
+    },
+    "sample_booking.name": {
+      "description": "The descriptive label or ID format for the sample intake record tied to a specific client.",
+      "type": "str"
+    },
+    "sample_date": {
+      "description": "The date and time when the sample was formally received and registered into the system.",
+      "type": "datetime"
+    },
+    "sample_details[].analysis_type": {
+      "description": "Specifies the nature of the investigation, such as routine testing, stability study, or validation.",
+      "type": "str"
+    },
+    "sample_details[].batch_number": {
+      "description": "The production or manufacturing batch identifier for the specific sample being analyzed.",
+      "type": "str"
+    },
+    "sample_details[].batch_size": {
+      "description": "The total volume or quantity of the production batch from which the sample was drawn.",
+      "type": "str"
+    },
+    "sample_details[].brand": {
+      "description": "Specifies the manufacturer or product brand name associated with the submitted sample.",
+      "type": "str"
+    },
+    "sample_details[].byManufactured": {
+      "description": "Indicates whether the manufacturer details were provided or confirmed during the sample intake process.",
+      "type": "str"
+    },
+    "sample_details[].checklistRemark": {
+      "description": "Contains specific observations or notes recorded during the laboratory's initial sample inspection checklist.",
+      "type": "str"
+    },
+    "sample_details[].checklistRemarks": {
+      "description": "Captures the final status regarding whether the sample meets criteria for laboratory acceptance.",
+      "type": "str"
+    },
+    "sample_details[].condition_to_maintain": {
+      "description": "Defines the specific storage or environmental requirements necessary to preserve sample integrity.",
+      "type": "str"
+    },
+    "sample_details[].declared_value": {
+      "description": "Records the claimed value or specification provided by the client for the sample.",
+      "type": "str"
+    },
+    "sample_details[].expiryOfDate": {
+      "description": "Tracks if the expiration date information is present or provided for the sample.",
+      "type": "str"
+    },
+    "sample_details[].expiry_date": {
+      "description": "Specifies the printed expiration or best-before date found on the sample packaging.",
+      "type": "str"
+    },
+    "sample_details[].extra_amount": {
+      "description": "Represents additional monetary charges applied specifically to the processing of this individual sample.",
+      "type": "float"
+    },
+    "sample_details[].grade": {
+      "description": "Indicates the quality, chemical, or purity classification level assigned to the sample.",
+      "type": "str"
+    },
+    "sample_details[].licenceManufacturer": {
+      "description": "Confirms if the manufacturing facility holds the necessary regulatory licenses for the product.",
+      "type": "str"
+    },
+    "sample_details[].manufactured_as_customer": {
+      "description": "Denotes if the sample was manufactured according to the client's specific design or requirements.",
+      "type": "bool"
+    },
+    "sample_details[].manufacturingOfDate": {
+      "description": "Tracks whether the manufacturing date is provided or verified for the sample.",
+      "type": "str"
+    },
+    "sample_details[].mfg_by": {
+      "description": "Identifies the name and location of the facility where the sample was produced.",
+      "type": "str"
+    },
+    "sample_details[].mfg_date": {
+      "description": "Records the specific production or manufacturing date marked on the sample.",
+      "type": "str"
+    },
+    "sample_details[].nameSample": {
+      "description": "Confirms if the formal name of the sample has been provided in the intake documentation.",
+      "type": "str"
+    },
+    "sample_details[].noBatch": {
+      "description": "Verifies if the batch number or lot identifier is available for the submitted sample.",
+      "type": "str"
+    },
+    "sample_details[].no_of_samples": {
+      "description": "Specifies the total count of individual physical units submitted for this specific order line item.",
+      "type": "int"
+    },
+    "sample_details[].packing_mode": {
+      "description": "Describes the type of container or packaging used to transport the sample to the lab.",
+      "type": "str"
+    },
+    "sample_details[].purposeOfTesting": {
+      "description": "Identifies the regulatory authority or specific context requiring the laboratory analysis.",
+      "type": "str"
+    },
+    "sample_details[].quantityOfSample": {
+      "description": "Confirms whether the quantity of the submitted sample has been documented.",
+      "type": "str"
+    },
+    "sample_details[].sampleBag": {
+      "description": "Indicates whether the sample arrived in a specific type of bag or secondary container.",
+      "type": "str"
+    },
+    "sample_details[].sampleCondition": {
+      "description": "Describes the physical state, such as intactness or quality, of the sample upon receipt.",
+      "type": "str"
+    },
+    "sample_details[].sampleRemark": {
+      "description": "Provides additional context or procedural notes regarding the specific handling of the sample.",
+      "type": "str"
+    },
+    "sample_details[].sample_name": {
+      "description": "States the primary descriptive name or identifier of the material provided for testing.",
+      "type": "str"
+    },
+    "sample_details[].sample_name_2": {
+      "description": "Provides an alternative or supplemental descriptive name for the sample, such as product category.",
+      "type": "str"
+    },
+    "sample_details[].sample_quantity": {
+      "description": "Records the numerical measurement or volume of the sample submitted for analysis.",
+      "type": "str"
+    },
+    "sample_details[].sealed_unsealed": {
+      "description": "Documents whether the sample packaging was intact or broken upon laboratory arrival.",
+      "type": "str"
+    },
+    "sample_details[].service_required": {
+      "description": "Defines the turnaround time urgency and corresponding service level requested for the testing.",
+      "type": "str"
+    },
+    "sample_details[].signed_unsigned": {
+      "description": "Records the status of authorization signatures required on the sample documentation or seals.",
+      "type": "str"
+    },
+    "sample_details[].sizeBatch": {
+      "description": "Confirms if the batch size information for the sample has been recorded.",
+      "type": "str"
+    },
+    "sample_details[].supplied_as_customer": {
+      "description": "Indicates if the sample was supplied by the client as per their provided specifications.",
+      "type": "bool"
+    },
+    "sample_details[].supplied_by": {
+      "description": "Records the identity of the entity or individual that provided the sample to the laboratory.",
+      "type": "str"
+    },
+    "sample_details[].testMethod": {
+      "description": "Confirms whether the specific testing methodology has been identified or documented.",
+      "type": "str"
+    },
+    "sample_image[].bucket": {
+      "description": "Names the cloud storage bucket location where the sample-related document is stored.",
+      "type": "str"
+    },
+    "sample_image[].capKey": {
+      "description": "Represents the unique file path or object key for the document in cloud storage.",
+      "type": "str"
+    },
+    "sample_image[].caseId": {
+      "description": "Links the image or document to a specific internal laboratory testing case or order.",
+      "type": "str"
+    },
+    "sample_image[].customEntry": {
+      "description": "Flags whether this file entry was manually created or uploaded by a laboratory user.",
+      "type": "bool"
+    },
+    "sample_image[].fileExt": {
+      "description": "Identifies the file format extension of the stored document or image.",
+      "type": "str"
+    },
+    "sample_image[].fileSize": {
+      "description": "Records the total size of the document file in bytes.",
+      "type": "Int64"
+    },
+    "sample_image[].folder": {
+      "description": "Indicates if the image file is stored within a categorized subdirectory structure.",
+      "type": "bool"
+    },
+    "sample_image[].key": {
+      "description": "The unique cloud storage path identifier for the uploaded laboratory sample image or document file.",
+      "type": "str"
+    },
+    "sample_image[].pageCount": {
+      "description": "The total number of pages contained within the uploaded image or document file.",
+      "type": "int"
+    },
+    "sample_image[].publicFile": {
+      "description": "Specifies if the uploaded document is accessible to external parties or the general public.",
+      "type": "bool"
+    },
+    "sample_image[].readyFrView": {
+      "description": "Flags whether the image processing is complete and the file is ready for laboratory staff to view.",
+      "type": "bool"
+    },
+    "sample_image[].rollName": {
+      "description": "The actual file name assigned to the uploaded image or digital document record.",
+      "type": "str"
+    },
+    "sample_image[].srNumber": {
+      "description": "The unique internal sample registration number associated with the specific uploaded image.",
+      "type": "Int64"
+    },
+    "sample_image[].type": {
+      "description": "Categorizes the nature of the document, such as a quotation letter or analytical report.",
+      "type": "str"
+    },
+    "sample_name": {
+      "description": "The primary descriptive label or commercial name of the item being tested by the laboratory.",
+      "type": "str"
+    },
+    "sample_name_2": {
+      "description": "An alternative or supplementary name field for further identifying the sample material.",
+      "type": "str"
+    },
+    "sample_quantity": {
+      "description": "The numeric amount or unit count of the sample provided for testing.",
+      "type": "str"
+    },
+    "sample_type_details": {
+      "description": "A flag indicating whether additional specific classification details for the sample type are required.",
+      "type": "bool"
+    },
+    "sample_type_details_value": {
+      "description": "Stores the specific descriptive category or property assigned to the sample type.",
+      "type": "str"
+    },
+    "sampling_charge": {
+      "description": "The monetary fee applied for the service of collecting the laboratory sample.",
+      "type": "float"
+    },
+    "scheduledDate": {
+      "description": "The calendar date assigned for the laboratory testing process to be performed.",
+      "type": "datetime"
+    },
+    "scheduler.code": {
+      "description": "The unique shorthand identifier for the staff member or system responsible for scheduling tests.",
+      "type": "str"
+    },
+    "scheduler.name": {
+      "description": "The full name of the laboratory staff member or employee managing the test schedule.",
+      "type": "str"
+    },
+    "sealed_unsealed": {
+      "description": "Records the physical condition of the sample packaging upon arrival at the laboratory.",
+      "type": "str"
+    },
+    "sendMailToParty": {
+      "description": "Determines if notification emails regarding the order should be sent to the associated party.",
+      "type": "bool"
+    },
+    "serialId": {
+      "description": "The unique tracking identifier for the laboratory order within the internal system.",
+      "type": "str"
+    },
+    "series": {
+      "description": "Defines the specific organizational or analytical series group to which the order belongs.",
+      "type": "str"
+    },
+    "service_required": {
+      "description": "Indicates the urgency level and the associated turnaround time for the requested laboratory analysis.",
+      "type": "str"
+    },
+    "signed_unsigned": {
+      "description": "Defines the signature or authorization status of the official test report document.",
+      "type": "str"
+    },
+    "srNumber": {
+      "description": "The master registration number assigned to the sample for comprehensive tracking throughout the lab.",
+      "type": "Int64"
+    },
+    "stabilityNoteDetails": {
+      "description": "A flag indicating if specific notes regarding the stability of the test sample are present.",
+      "type": "bool"
+    },
+    "state": {
+      "description": "The geographic region or state from which the sample originated or where the client is located.",
+      "type": "str"
+    },
+    "status": {
+      "description": "The current operational state of the order, indicating if it is active or inactive.",
+      "type": "str"
+    },
+    "statusOfHold": {
+      "description": "Indicates if the order is currently suspended or released from a hold status.",
+      "type": "str"
+    },
+    "sub_category.code": {
+      "description": "The unique alphanumeric code identifying a specific sub-classification of the tested items.",
+      "type": "str"
+    },
+    "sub_category.name": {
+      "description": "The descriptive name of the product sub-category used for laboratory organizational reporting.",
+      "type": "str"
+    },
+    "sub_category.type": {
+      "description": "Identifies the structural classification type used for grouping the sub-category record.",
+      "type": "str"
+    },
+    "submission_type": {
+      "description": "Describes the method by which the sample was physically delivered or provided to the laboratory.",
+      "type": "str"
+    },
+    "supplied_as_customer": {
+      "description": "Indicates whether the sample was provided directly by the customer rather than collected by the lab.",
+      "type": "bool"
+    },
+    "surcharge_value": {
+      "description": "The specific dollar amount added to the base cost for additional laboratory service requirements.",
+      "type": "str"
+    },
+    "tatCust": {
+      "description": "A flag indicating if a custom Turnaround Time requirement has been specified for this order.",
+      "type": "bool"
+    },
+    "testEndDate": {
+      "description": "The final calendar date upon which the laboratory analysis procedures were completed.",
+      "type": "datetime"
+    },
+    "testStartDate": {
+      "description": "The initial calendar date when the laboratory analysis procedures were officially commenced.",
+      "type": "datetime"
+    },
+    "test_standard.code": {
+      "description": "The unique reference code for the specific testing protocol or industry standard applied.",
+      "type": "str"
+    },
+    "test_standard.name": {
+      "description": "The official title or citation of the regulatory standard followed during the testing process.",
+      "type": "str"
+    },
+    "time_in_days": {
+      "description": "The expected or actual duration required to complete the testing process, measured in days.",
+      "type": "str"
+    },
+    "total": {
+      "description": "Represents the final monetary sum charged to the client for all testing services provided in the laboratory order.",
+      "type": "float"
+    },
+    "updateDate": {
+      "description": "Records the exact timestamp when the last modification was made to the laboratory order record.",
+      "type": "datetime"
+    },
+    "updatedBy": {
+      "description": "Stores the unique email address of the system user who performed the most recent edit to the order.",
+      "type": "str"
+    },
+    "updatedByName": {
+      "description": "Contains the full display name of the staff member responsible for the latest update to the laboratory record.",
+      "type": "str"
+    },
+    "verificationDate": {
+      "description": "Indicates the specific point in time when the laboratory test results were officially reviewed and validated for accuracy.",
+      "type": "datetime"
+    }
+  }
+}
