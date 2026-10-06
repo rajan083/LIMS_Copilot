@@ -143,7 +143,7 @@ if user_input:
     with st.chat_message("assistant"):
         with st.spinner("Thinking..."):
             reply, st.session_state.messages, artifacts = handle_turn(
-                st.session_state.messages, user_input, session_id=st.session_state.session_id
+                st.session_state.messages, user_input, session_id=st.session_state.session_id, user="local-test"
             )
         st.markdown(reply)
         for art_idx, artifact in enumerate(artifacts):
@@ -152,21 +152,22 @@ if user_input:
     st.session_state.display_turns.append({"role": "assistant", "content": reply, "artifacts": artifacts})
     
     
-pending = get_pending_email(st.session_state.session_id)
+pending = get_pending_email(st.session_state.session_id, user="local-test")
 if pending:
     c = pending["contact"]
     who = f"{c['name']} ({c['org']}) " if c.get("name") else ""
     warn = "  ⚠ outside the organisation" if is_external(c["email"]) else ""
+    if c.get("source") == "typed":
+        warn += "⚠ this address was not typed by you, check it"
     st.warning(f"Send **{_basename(pending['file'])}** to {who}**{c['email']}**?{warn}")
     with st.expander("Subject and message"):
         st.write(f"**{pending['subject']}**")
         st.write(pending["body"])
-    col_a, col_b = st.columns(2)
     _, col_a, _gap, col_b = st.columns([6, 1.6, 0.6, 1.6])
     if col_a.button("Send", key="email_send", icon=":material/send:", type="primary", use_container_width=True):
-        ok, msg = confirm_and_send(st.session_state.session_id)
+        ok, msg = confirm_and_send(st.session_state.session_id, user="local-test")
         st.session_state.display_turns.append({"role": "assistant", "content": msg, "artifacts": []})
         st.rerun()
     if col_b.button("Cancel", key="email_cancel", icon=":material/close:", use_container_width=True):
-        cancel_pending_email(st.session_state.session_id)
+        cancel_pending_email(st.session_state.session_id, user="local-test")
         st.rerun()

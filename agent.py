@@ -478,7 +478,7 @@ def _compact_tool_result_for_context(result, max_items=10):
 
     return compacted
 
-def run_tool_call(function_call, session_id="default", turn_id=""):
+def run_tool_call(function_call, session_id="default", turn_id="", user= None):
     name = function_call.name
     artifact = None
     tag = f"[{session_id}|{turn_id}]"
@@ -738,11 +738,11 @@ def run_tool_call(function_call, session_id="default", turn_id=""):
                 fields = args["sum_fields"]
                 rows = []
                 for g in agg.get("groups", []):
-                    row = {args["group_by"]: g["group"], "orders": g["count"]}
+                    row = {args["group_by"]: g["group"], "records": g["count"]}
                     for f in fields:
                         row[f] = g["sums"].get(f, 0)
                     rows.append(row)
-                total = {args["group_by"]: "TOTAL", "orders": agg.get("total_matching_count", 0)}
+                total = {args["group_by"]: "TOTAL", "records": agg.get("total_matching_count", 0)}
                 for f in fields:
                     total[f] = agg.get("overall_totals", {}).get(f, 0)
                 rows.append(total)
@@ -808,7 +808,7 @@ def run_tool_call(function_call, session_id="default", turn_id=""):
 
         elif name == "prepare_report_email":
             result= prepare_report_email(
-                session_id,
+                session_id, user=user,
                 recipient= args.get("recipient"),
                 contact_id= args.get("contact_id"),
                 file_path= args.get("file_path"),
@@ -829,7 +829,7 @@ def run_tool_call(function_call, session_id="default", turn_id=""):
 
 
 
-def handle_turn(messages, content, session_id="default"):
+def handle_turn(messages, content, session_id="default", user= None):
     
     turn_id = uuid.uuid4().hex[:8]
     logger.info(f"[{session_id}|{turn_id}] New turn: {content!r}")
@@ -910,7 +910,7 @@ def handle_turn(messages, content, session_id="default"):
         response_parts = []
         for fc in function_calls:
             tools_used.add(fc.name)
-            result, artifact = run_tool_call(fc, session_id=session_id, turn_id=turn_id)
+            result, artifact = run_tool_call(fc, session_id=session_id, turn_id=turn_id, user=user)
             if artifact:
                 artifacts.append(artifact)
                 note_artifact(session_id, artifact["path"])

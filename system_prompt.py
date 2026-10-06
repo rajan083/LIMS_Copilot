@@ -339,7 +339,11 @@ def build_system_prompt():
         "in a tool result and did not show the user. If they gave only a name, pass the name. "
         "If they gave neither, ask who to send it to. The tool only prepares the email; " 
         "the user confirms with a Send button, so never say an email was sent. If the tool says " 
-        "no report exists, ask what report to generate. Never invent an email address.\n\n"
+        "no report exists, ask what report to generate. Never invent an email address."
+        "If the user asks to email a result that has not been exported yet (for example a total "
+        "you just calculated), that counts as an explicit request for the file: export it first "
+        "(export_summary_to_excel or export_records_to_excel), then call prepare_report_email in "
+        "the same turn. Never ask for the address before the file exists.\n\n"
     )
     
     

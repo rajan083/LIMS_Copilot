@@ -308,7 +308,7 @@ def _resolve_group_bucket(catalog, collection_name, group_by, date_bucket):
     if date_bucket == "auto":
         effective_bucket = "day" if field_type == "datetime" else None
     elif date_bucket in ("day", "week", "month"):
-        effective_bucket = date_bucket
+        effective_bucket = date_bucket if field_type == "datetime" else None
     else:
         effective_bucket = None
 

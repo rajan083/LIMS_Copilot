@@ -5,6 +5,7 @@ from email.message import EmailMessage
 logger= logging.getLogger("lims.email")
 
 EMAIL_RE = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")
+EMAIL_FULL_RE = re.compile(r"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$")
 MAX_PER_HOUR= 10
 
 _typed= {}
@@ -44,7 +45,10 @@ def note_assistant_message(session_id, text):
 def note_artifact(session_id, path):
     _files.setdefault(session_id, []).append(path)
 
-
+def clear_session(session_id):
+    for d in (_typed, _shown, _files, _choices, _pending):
+        d.pop(session_id, None)
+        
 def _get(doc, dotted):
     for part in dotted.split("."):
         if not isinstance(doc, dict):
@@ -60,28 +64,35 @@ def find_contact(query, limit=5):
     results, seen = [], set()
 
     for src in CONTACT_SOURCES:
-        fields = src["name_fields"] + ([src["org_field"]] if src["org_field"] else [])
-        projection = {f: 1 for f in fields + [src["email_field"]]}
-        coll = db[src["collection"]]
+        try:
+            fields = src["name_fields"] + ([src["org_field"]] if src["org_field"] else [])
+            projection = {f: 1 for f in fields + [src["email_field"]]}
+            coll = db[src["collection"]]
 
-        if is_email:    # direct match on the email field, whole address, ignoring case
-            cursor = coll.find({src["email_field"]: query}, projection) \
-                         .collation({"locale": "en", "strength": 2}).limit(limit)
-        else:           # names and companies: partial match
-            pattern = {"$regex": re.escape(query), "$options": "i"}
-            cursor = coll.find({"$or": [{f: pattern} for f in fields]}, projection).limit(limit)
+            if is_email:
+                cursor = (coll.find({src["email_field"]: query}, projection)
+                              .collation({"locale": "en", "strength": 2}).limit(limit))
+            else:
+                pattern = {"$regex": re.escape(query), "$options": "i"}
+                cursor = coll.find({"$or": [{f: pattern} for f in fields]}, projection).limit(limit)
+            cursor = cursor.max_time_ms(3000)          # a slow collection can't stall the chat
 
-        for doc in cursor:
-            email = _get(doc, src["email_field"])
-            if not isinstance(email, str) or "@" not in email or email.lower() in seen:
-                continue
-            seen.add(email.lower())
-            results.append({
-                "id": f'{src["collection"]}:{doc["_id"]}',
-                "name": " ".join(str(_get(doc, f) or "") for f in src["name_fields"]).strip(),
-                "org": (_get(doc, src["org_field"]) or "") if src["org_field"] else "",
-                "email": email,
-            })
+            for doc in cursor:
+                email = _get(doc, src["email_field"])
+                if not isinstance(email, str) or not EMAIL_FULL_RE.match(email.strip()):
+                    continue
+                email = email.strip()
+                if email.lower() in seen:
+                    continue
+                seen.add(email.lower())
+                results.append({
+                    "id": f'{src["collection"]}:{doc["_id"]}',
+                    "name": " ".join(str(_get(doc, f) or "") for f in src["name_fields"]).strip(),
+                    "org": (_get(doc, src["org_field"]) or "") if src["org_field"] else "",
+                    "email": email,
+                })
+        except Exception as e:
+            logger.warning(f'[email] contact lookup failed in {src.get("collection")}: {e}')
     return results[:limit]
 
 
@@ -94,7 +105,8 @@ def is_external(email):
     return bool(internal) and not email.lower().endswith('@'+ internal)
 
 def prepare_report_email(session_id, user=None, recipient=None, contact_id=None, file_path=None, subject="LIMS report", body="PFA report"):
-    
+    if not user:
+        return {"error": "Not authenticated."}
     _pending.pop(session_id, None)
     
     files= _files.get(session_id, [])
@@ -126,6 +138,7 @@ def prepare_report_email(session_id, user=None, recipient=None, contact_id=None,
             known = []
         contact = dict(known[0]) if known else {"name": "", "org": "", "email": recipient}
         contact["email"] = recipient
+        contact["source"] = "typed" if typed_ok else "shown"
         
     elif recipient:
         matches= find_contact(recipient)
@@ -141,16 +154,25 @@ def prepare_report_email(session_id, user=None, recipient=None, contact_id=None,
     else:
         return {"error": "No recipient given, Ask the user for a name or an email address."}
     
+    if not EMAIL_FULL_RE.match(contact["email"]):
+        return {"error": "That is not a valid email address."}
+    subject = " ".join(str(subject or "LIMS report").split())[:150]   
+    body = str(body or "PFA report")[:2000]
+
     _pending[session_id]= {"user": user,"contact": contact, "file": path, "subject": subject, "body": body}
     return {"status": "awaiting_user_confirmation",
             "message": (f"Prepared {os.path.basename(path)} for {contact['name'] or contact['email']}. The user must click the Sent button under the chat. Do NOT say the email was sent.")
             }
     
-def get_pending_email(session_id):
-    return _pending.get(session_id)
+def get_pending_email(session_id, user=None):
+    p = _pending.get(session_id)
+    return p if p and user and p.get("user") == user else None
 
-def cancel_pending_email(session_id):
-    _pending.pop(session_id, None)
+
+def cancel_pending_email(session_id, user=None):
+    p = _pending.get(session_id)
+    if p and user and p.get("user") == user:
+        _pending.pop(session_id, None)
     
 def _smtp_send(to, subject, body, path):
     msg = EmailMessage()
@@ -168,24 +190,29 @@ def _smtp_send(to, subject, body, path):
         s.send_message(msg)
         
 def confirm_and_send(session_id, user=None):
-    p=_pending.pop(session_id, None)
-    if not p or p.get("user") != user:
+    p = _pending.get(session_id)
+    if not user or not p or p.get("user") != user:
         return False, "Nothing to send."
-    now=time.time()
-    recent=[t for t in _sent.get(session_id, []) if now -t < 3600]
+
+    now = time.time()
+    recent = [t for t in _sent.get(user, []) if now - t < 3600]
     if len(recent) >= MAX_PER_HOUR:
         return False, "Email limit reached for this hour."
-    c=p["contact"]
+
+    _pending.pop(session_id, None)
+    c = p["contact"]
     try:
         _smtp_send(c["email"], p["subject"], p["body"], p["file"])
     except Exception as e:
-        logger.error(f"[email] faied to {c['email']} : {e}")
-        return False, f"Count not send the email: {e}"
-    _sent[session_id]= recent + [now]
-    entry= {"time": time.strftime("%Y-%m-%d %H:%M:%S"), "session": session_id, "user": user, "to": c["email"], "contact": c.get("name", ""), "file": os.path.basename(p["file"]),
-            "external": is_external(c["email"])}
+        _pending[session_id] = p                      # keep it so the user can retry
+        logger.error(f"[email] failed to {c['email']}: {e}")
+        return False, f"Could not send the email: {e}"
+
+    _sent[user] = recent + [now]
+    entry = {"time": time.strftime("%Y-%m-%d %H:%M:%S"), "session": session_id, "user": user,
+             "to": c["email"], "contact": c.get("name", ""), "file": os.path.basename(p["file"]),
+             "external": is_external(c["email"])}
     logger.info(f"[email] SENT {json.dumps(entry)}")
-    with open ("email_audit.jsonl", "a", encoding="utf-8") as f:
+    with open("email_audit.jsonl", "a", encoding="utf-8") as f:
         f.write(json.dumps(entry) + "\n")
     return True, f"Sent {entry['file']} to {c['name'] or c['email']}."
-    

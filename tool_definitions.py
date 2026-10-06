@@ -145,16 +145,14 @@ tools = [
         "function": {
             "name": "export_joined_records_to_excel",
             "description": (
-                "Export a query_collection-style filter to a downloadable .xlsx file. "
-                "⚠️ Do NOT call this unless the user's own message explicitly asked for a "
-                "file/export/download/spreadsheet. If they just asked to see, compare, or "
-                "list data, answer with a markdown table in chat instead — see the "
-                "CHAT vs EXCEL rule in your instructions. "
-                "For a distinct/unique list (e.g. 'all the analysts'), set 'columns' to "
                 "Joins two collections on a shared key and exports the combined result as "
                 "ONE sheet. Use whenever fields from two collections need to land in a "
                 "single sheet (e.g. 'orders with account and analyst') — this performs the "
-                "join; don't claim a combined sheet isn't possible."
+                "join; don't claim a combined sheet isn't possible. "
+                "⚠️ Do NOT call this unless the user's own message explicitly asked for a "
+                "file/export/download/spreadsheet. If they just asked to see, compare, or "
+                "list data, answer with a markdown table in chat instead — see the "
+                "EXCEL IS NEVER AUTOMATIC rule in your instructions."
             ),
             "parameters": {
                 "type": "object",
@@ -478,15 +476,15 @@ tools = [
             "description": (
                 "Prepare an email with a previously generated report attached. Use ONLY when the "
                 "user explicitly asks to email or send a report. This does not send anything: the "
-                "user confirms with a Send button. If the user typed an email address, pass exactly "
-                "that address as recipient. If they gave only a name, pass the name. If several "
-                "contacts match, ask the user which one and call again with that contact_id."
+                "user confirms with a Send button. If the user typed an email address, or you "
+                "already showed it to them and they agreed, pass exactly that address as recipient. "
+                "If they gave only a name, pass the name. If several contacts match, ask the user "
+                "which one and call again with that contact_id."
             ),
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "recipient": {"type": "string", "description": "Email address typed by the user, or a person/company name."},
-                    "contact_id": {"type": "string", "description": "Only when the user picked from a list of matches."},
+                    "recipient": {"type": "string", "description": "Email address typed by the user (or shown to them and agreed), or a person/company name."},                    "contact_id": {"type": "string", "description": "Only when the user picked from a list of matches."},
                     "file_path": {"type": "string", "description": "Optional. Defaults to the latest report in this chat."},
                     "subject": {"type": "string"},
                     "body": {"type": "string", "description": "Short plain-text message."},
@@ -514,7 +512,11 @@ tools = [
                     "date_field": {"type": "string"},
                     "date_from": {"type": "string"},
                     "date_to": {"type": "string"},
-                    "date_bucket": {"type": "string", "description": "day, month or year. Prefer month for reports."},
+                    "date_bucket": {
+                        "type": "string",
+                        "enum": ["auto", "day", "week", "month"],
+                        "description": "Only applies when group_by is a date field. Prefer month for reports.",
+                    },
                     "label": {"type": "string"},
                 },
                 "required": ["collection_name", "group_by", "sum_fields"],
