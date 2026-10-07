@@ -48,12 +48,18 @@ while True:
     if pending:
         c = pending["contact"]
         note = "   (address was not typed by you, check it)" if c.get("source") == "shown" else ""
-        answer = input(f"Send {os.path.basename(pending['file'])} to {c.get('name') or ''} <{c['email']}>?{note} (y/n): ").strip().lower()
-        if answer == "y":
-            ok, msg = confirm_and_send(CLI_SESSION, user=CLI_USER)
-            print(f"[email] {msg}\n")
-        else:
-            cancel_pending_email(CLI_SESSION, user=CLI_USER)
-            print("[email] cancelled\n")
+        names = ", ".join(os.path.basename(f) for f in pending.get("files") or [pending["file"]])
+        question = f"Send {names} to {c.get('name') or ''} <{c['email']}>?{note} (y/n): "
+        while True:
+            answer = input(question).strip().lower()
+            if answer in ("y", "yes", "send"):
+                ok, msg = confirm_and_send(CLI_SESSION, user=CLI_USER)
+                print(f"[email] {msg}\n")
+                break
+            if answer in ("n", "no", "cancel"):
+                cancel_pending_email(CLI_SESSION, user=CLI_USER)
+                print("[email] cancelled\n")
+                break
+            print("Please type y or n.")
 
     last_exchange = (content, reply)

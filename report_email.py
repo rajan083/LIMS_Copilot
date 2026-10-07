@@ -7,6 +7,9 @@ logger= logging.getLogger("lims.email")
 EMAIL_RE = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")
 EMAIL_FULL_RE = re.compile(r"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$")
 MAX_PER_HOUR= 10
+MAX_FILES = 5
+MAX_ATTACH_BYTES = int(os.environ.get("MAX_ATTACH_MB", 20)) * 1024 * 1024   # add near MAX_PER_HOUR
+
 
 _typed= {}
 _files= {}
@@ -100,32 +103,53 @@ def _mask(email):
     user, _, domain= email.partition("@")
     return f"{user[:3]}***@{domain}"
 
+
 def is_external(email):
     internal= os.environ.get("INTERNAL_DOMAIN", "").lower()
     return bool(internal) and not email.lower().endswith('@'+ internal)
 
-def prepare_report_email(session_id, user=None, recipient=None, contact_id=None, file_path=None, subject="LIMS report", body="PFA report"):
+
+def prepare_report_email(session_id, user=None, recipient=None, contact_id=None,
+                         file_path=None, file_paths=None, subject="LIMS report", body="PFA report"):
     if not user:
         return {"error": "Not authenticated."}
     _pending.pop(session_id, None)
-    
-    files= _files.get(session_id, [])
+
+    files = _files.get(session_id, [])
     if not files:
         return {"error": "No report has been generated in this chat yet. Ask the user which report to create first."}
-    
-    path= files[-1]
+
+    wanted = list(file_paths or [])
     if file_path:
-        want= os.path.basename(file_path.replace("\\", "/"))
-        path= next((f for f in reversed(files) if os.path.basename(f) == want), path)
-    if not os.path.exists(path):
-        return {"error": "The report file is no longer available."}
-    
-    recipient= (recipient or "").strip()
+        wanted.append(file_path)
+
+    if wanted:
+        paths = []
+        for w in wanted:
+            name = os.path.basename(str(w).replace("\\", "/"))
+            match = next((f for f in reversed(files) if os.path.basename(f) == name), None)
+            if not match:
+                have = ", ".join(sorted({os.path.basename(f) for f in files}))
+                return {"error": f"'{name}' was not generated in this chat. Files available: {have}"}
+            if match not in paths:
+                paths.append(match)
+    else:
+        paths = [files[-1]]
+
+    if len(paths) > MAX_FILES:
+        return {"error": f"At most {MAX_FILES} files can be attached to one email."}
+    missing = [os.path.basename(p) for p in paths if not os.path.exists(p)]
+    if missing:
+        return {"error": "These files are no longer available: " + ", ".join(missing)}
+    if sum(os.path.getsize(p) for p in paths) > MAX_ATTACH_BYTES:
+        return {"error": f"The attachments are too large (limit {MAX_ATTACH_BYTES // 1024 // 1024} MB in total)."}
+
+    recipient = (recipient or "").strip()
     if contact_id:
-        contact= _choices.get(session_id, {}).get(contact_id)
+        contact = _choices.get(session_id, {}).get(contact_id)
         if not contact:
             return {"error": "Unknown contact_id. Search by name again."}
-        
+
     elif "@" in recipient:
         r = recipient.lower()
         typed_ok = r in [a.lower() for a in _typed.get(session_id, [])]
@@ -139,30 +163,32 @@ def prepare_report_email(session_id, user=None, recipient=None, contact_id=None,
         contact = dict(known[0]) if known else {"name": "", "org": "", "email": recipient}
         contact["email"] = recipient
         contact["source"] = "typed" if typed_ok else "shown"
-        
+
     elif recipient:
-        matches= find_contact(recipient)
+        matches = find_contact(recipient)
         if not matches:
-            return {"error": f"No contact found for '{recipient}',. Ask the user for email address."}
-        if len(matches)>1:
-            _choices[session_id]= {m["id"]: m for m in matches}
+            return {"error": f"No contact found for '{recipient}'. Ask the user for the email address."}
+        if len(matches) > 1:
+            _choices[session_id] = {m["id"]: m for m in matches}
             return {"status": "choose",
                     "matches": [{"contact_id": m["id"], "name": m["name"], "org": m["org"], "email": _mask(m["email"])} for m in matches],
-                    "note": "Ask the user which one, then call again with that contact_id"
-                    }
-        contact= matches[0]
+                    "note": "Ask the user which one, then call again with that contact_id"}
+        contact = matches[0]
     else:
-        return {"error": "No recipient given, Ask the user for a name or an email address."}
-    
+        return {"error": "No recipient given. Ask the user for a name or an email address."}
+
     if not EMAIL_FULL_RE.match(contact["email"]):
         return {"error": "That is not a valid email address."}
-    subject = " ".join(str(subject or "LIMS report").split())[:150]   
+    subject = " ".join(str(subject or "LIMS report").split())[:150]
     body = str(body or "PFA report")[:2000]
 
-    _pending[session_id]= {"user": user,"contact": contact, "file": path, "subject": subject, "body": body}
+    _pending[session_id] = {"user": user, "contact": contact, "files": paths, "file": paths[0],
+                            "subject": subject, "body": body}
+    names = ", ".join(os.path.basename(p) for p in paths)
     return {"status": "awaiting_user_confirmation",
-            "message": (f"Prepared {os.path.basename(path)} for {contact['name'] or contact['email']}. The user must click the Sent button under the chat. Do NOT say the email was sent.")
-            }
+            "message": (f"Prepared {names} for {contact['name'] or contact['email']}. The email has NOT been sent; "
+                        "it is waiting for the user's confirmation. Tell the user it is ready and ask them to confirm. "
+                        "Do NOT say the email was sent.")}
     
 def get_pending_email(session_id, user=None):
     p = _pending.get(session_id)
@@ -174,20 +200,23 @@ def cancel_pending_email(session_id, user=None):
     if p and user and p.get("user") == user:
         _pending.pop(session_id, None)
     
-def _smtp_send(to, subject, body, path):
+    
+def _smtp_send(to, subject, body, paths):
     msg = EmailMessage()
     msg["From"] = os.environ["SMTP_USER"]
     msg["To"] = to
     msg["Subject"] = subject
     msg.set_content(body)
-    ctype, _ = mimetypes.guess_type(path)
-    main, sub = (ctype or "application/octet-stream").split("/", 1)
-    with open(path, "rb") as f:
-        msg.add_attachment(f.read(), maintype=main, subtype=sub, filename=os.path.basename(path))
+    for path in paths:
+        ctype, _ = mimetypes.guess_type(path)
+        main, sub = (ctype or "application/octet-stream").split("/", 1)
+        with open(path, "rb") as f:
+            msg.add_attachment(f.read(), maintype=main, subtype=sub, filename=os.path.basename(path))
     with smtplib.SMTP(os.environ["SMTP_HOST"], int(os.environ.get("SMTP_PORT", 587))) as s:
         s.starttls()
         s.login(os.environ["SMTP_USER"], os.environ["SMTP_PASS"])
         s.send_message(msg)
+
         
 def confirm_and_send(session_id, user=None):
     p = _pending.get(session_id)
@@ -202,17 +231,18 @@ def confirm_and_send(session_id, user=None):
     _pending.pop(session_id, None)
     c = p["contact"]
     try:
-        _smtp_send(c["email"], p["subject"], p["body"], p["file"])
+        _smtp_send(c["email"], p["subject"], p["body"], p["files"])
     except Exception as e:
         _pending[session_id] = p                      # keep it so the user can retry
         logger.error(f"[email] failed to {c['email']}: {e}")
         return False, f"Could not send the email: {e}"
 
     _sent[user] = recent + [now]
+    names = [os.path.basename(f) for f in p["files"]]
     entry = {"time": time.strftime("%Y-%m-%d %H:%M:%S"), "session": session_id, "user": user,
-             "to": c["email"], "contact": c.get("name", ""), "file": os.path.basename(p["file"]),
+             "to": c["email"], "contact": c.get("name", ""), "files": names,
              "external": is_external(c["email"])}
     logger.info(f"[email] SENT {json.dumps(entry)}")
     with open("email_audit.jsonl", "a", encoding="utf-8") as f:
         f.write(json.dumps(entry) + "\n")
-    return True, f"Sent {entry['file']} to {c['name'] or c['email']}."
+    return True, f"Sent {', '.join(names)} to {c['name'] or c['email']}."

@@ -485,7 +485,11 @@ tools = [
                 "type": "object",
                 "properties": {
                     "recipient": {"type": "string", "description": "Email address typed by the user (or shown to them and agreed), or a person/company name."},                    "contact_id": {"type": "string", "description": "Only when the user picked from a list of matches."},
-                    "file_path": {"type": "string", "description": "Optional. Defaults to the latest report in this chat."},
+                    "file_paths": {
+                            "type": "array",
+                            "items": {"type": "string"},
+                            "description": "Optional. File names to attach, only files generated in this chat. Pass several when the user asks for several. Defaults to the latest report.",
+                        },
                     "subject": {"type": "string"},
                     "body": {"type": "string", "description": "Short plain-text message."},
                 },

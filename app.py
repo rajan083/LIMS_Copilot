@@ -159,7 +159,8 @@ if pending:
     warn = "  ⚠ outside the organisation" if is_external(c["email"]) else ""
     if c.get("source") == "typed":
         warn += "⚠ this address was not typed by you, check it"
-    st.warning(f"Send **{_basename(pending['file'])}** to {who}**{c['email']}**?{warn}")
+    names = ", ".join(_basename(f) for f in pending["files"])
+    st.warning(f"Send **{names}** to {who}**{c['email']}**?{warn}")
     with st.expander("Subject and message"):
         st.write(f"**{pending['subject']}**")
         st.write(pending["body"])

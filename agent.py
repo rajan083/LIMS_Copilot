@@ -51,6 +51,17 @@ _NEEDS_CONTEXT_RE = re.compile(
     re.IGNORECASE,
 )
 
+
+EXPORT_TOOLS = {"export_records_to_excel", "export_joined_records_to_excel", "export_summary_to_excel"}
+EXPORT_WORDS = re.compile(
+    r"\b(export|excel|xlsx|spreadsheet|sheet|csv|download|file|report|save|send|email|mail)\b", re.I)
+YES_WORDS = re.compile(r"^\s*(yes|yeah|yep|sure|ok|okay|please do|go ahead|do it)\b", re.I)
+
+def _export_allowed(user_text):
+    text = user_text or ""
+    return bool(EXPORT_WORDS.search(text) or YES_WORDS.search(text))
+
+
 def in_standalone_question(text):
     text = (text or "").strip()
     return (
@@ -476,7 +487,7 @@ def _compact_tool_result_for_context(result, max_items=10):
 
     return compacted
 
-def run_tool_call(function_call, session_id="default", turn_id="", user= None):
+def run_tool_call(function_call, session_id="default", turn_id="", user= None, user_text=""):
     name = function_call.name
     artifact = None
     tag = f"[{session_id}|{turn_id}]"
@@ -488,6 +499,9 @@ def run_tool_call(function_call, session_id="default", turn_id="", user= None):
         print(f"[tool_call] {name} args={json.dumps(args, indent=2, default=str)}")
         logger.info(f"{tag}[tool_call] {name} args={json.dumps(args, indent=2, default=str)}")
         
+        if name in EXPORT_TOOLS and not _export_allowed(user_text):
+            result = {"error": "The user did not ask for a file. Do not export. Show the data in chat, or ask whether they want it exported and wait for their answer."}
+
         if name == "list_collections":
             result = get_shallow_summary(SCHEMA_CATALOG)
 
@@ -810,6 +824,7 @@ def run_tool_call(function_call, session_id="default", turn_id="", user= None):
                 recipient= args.get("recipient"),
                 contact_id= args.get("contact_id"),
                 file_path= args.get("file_path"),
+                file_paths= args.get("file_paths"),
                 subject= args.get("subject", "LIMS report"),
                 body= args.get("body", "PFA Report.")
             )

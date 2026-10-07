@@ -125,6 +125,7 @@ def _public_pending(user, session_id):
         "org": c.get("org", ""),
         "external": is_external(c["email"]),
         "file": os.path.basename(p["file"]),
+        "files": [os.path.basename(f) for f in p["files"]],
         "subject": p["subject"],
         "body": p["body"],
     }
