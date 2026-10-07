@@ -441,8 +441,6 @@ def _basename(path):
 
 
 def new_conversation():
-    # msgs[0] is the system prompt (kept as a plain dict and passed to the API
-    # as system_instruction); everything after it is a native types.Content.
     return [{"role": "system", "content": build_system_prompt()}]
 
 
