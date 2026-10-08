@@ -26,6 +26,7 @@ load_dotenv()
 genai_client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
 
 MODEL = "gemini-3.1-flash-lite"
+# MODEL= "gemini-3.8-flash"            "Latest Gemini API models, have to check the tokan usage for this to integrate."
 
 ALLOWED_COLLECTIONS = ["el_orders", "el_order_test_parameter", "app_invoice"]
 SCHEMA_CATALOG = build_schema_catalog(collection_names=ALLOWED_COLLECTIONS)
@@ -446,11 +447,6 @@ def _build_normalized_export(records):
     return sheets
 
 
-def _basename(path):
-    return path.replace("\\", "/").split("/")[-1]
-
-
-
 def new_conversation():
     return [{"role": "system", "content": build_system_prompt()}]
 
@@ -502,7 +498,7 @@ def run_tool_call(function_call, session_id="default", turn_id="", user= None, u
         if name in EXPORT_TOOLS and not _export_allowed(user_text):
             result = {"error": "The user did not ask for a file. Do not export. Show the data in chat, or ask whether they want it exported and wait for their answer."}
 
-        if name == "list_collections":
+        elif name == "list_collections":
             result = get_shallow_summary(SCHEMA_CATALOG)
 
         elif name == "describe_field":
@@ -923,7 +919,7 @@ def handle_turn(messages, content, session_id="default", user= None):
         response_parts = []
         for fc in function_calls:
             tools_used.add(fc.name)
-            result, artifact = run_tool_call(fc, session_id=session_id, turn_id=turn_id, user=user)
+            result, artifact = run_tool_call(fc, session_id=session_id, turn_id=turn_id, user=user, user_text=content)
             if artifact:
                 artifacts.append(artifact)
                 note_artifact(session_id, artifact["path"])
