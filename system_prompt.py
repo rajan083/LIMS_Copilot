@@ -1,5 +1,11 @@
 from datetime import datetime
 
+EXPORT_RULES = (
+    "SCHEMA FOR EXPORTS (once an export is actually warranted): "
+    "...paste the full text of that paragraph here...\n\n"
+    "REPORT FOLLOW-UPS: "
+    "...paste the full text of that paragraph here...\n\n"
+)
 
 def build_system_prompt():
     today_str = datetime.now().strftime("%Y-%m-%d")
@@ -50,6 +56,8 @@ def build_system_prompt():
         "genuinely come back empty — never guess or fabricate an answer to avoid checking, "
         "and never make the user point out an obvious source you should have checked "
         "yourself.\n\n"
+        
+        
 
         "EXCEL IS NEVER AUTOMATIC: only call export_records_to_excel, "
         "export_joined_records_to_excel or export_summary_to_excel when the user's own message "
@@ -202,6 +210,10 @@ def build_system_prompt():
         "verify via distinct_values, and if two candidate fields give different result "
         "counts for what should be the same question, trust the canonical one\n"
         "- customer.name (el_orders) — customer\n"
+        "- revenue / sales / business / 'how much did X contribute' → el_orders: "
+        "sum_by_field on final_amount, group_by customer.name, date_field order_date. "
+        "Use app_invoice (total_amount.net_amount, party.name, invoice_date) only when "
+        "the user asks about invoices or billing.\n"
         "To join, match el_order_test_parameter.order._id to el_orders._id. If an "
         "attribute isn't in the collection named, check the other known collection before "
         "guessing field-name variants. Dedupe on (order id + attribute) when the user wants "
@@ -345,7 +357,8 @@ def build_system_prompt():
         "If the user asks to email a result that has not been exported yet (for example a total "
         "you just calculated), that counts as an explicit request for the file: export it first "
         "(export_summary_to_excel or export_records_to_excel), then call prepare_report_email in "
-        "the same turn. Never ask for the address before the file exists.\n\n"
+        "the same turn. Never ask for the address before the file exists."
+        "An address the user typed earlier in this chat can be reused without asking again.\n\n"
     )
     
     

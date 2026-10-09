@@ -54,13 +54,16 @@ _NEEDS_CONTEXT_RE = re.compile(
 
 
 EXPORT_TOOLS = {"export_records_to_excel", "export_joined_records_to_excel", "export_summary_to_excel"}
-EXPORT_WORDS = re.compile(
-    r"\b(export|excel|xlsx|spreadsheet|sheet|csv|download|file|report|save|send|email|mail)\b", re.I)
+
+EXPORT_WORDS = re.compile(r"\b(export\w*|excel|xlsx|spreadsheet|sheets?|csv|download\w*)\b", re.I)
+
 YES_WORDS = re.compile(r"^\s*(yes|yeah|yep|sure|ok|okay|please do|go ahead|do it)\b", re.I)
 
-def _export_allowed(user_text):
+def _export_allowed(user_text, prev_model_text=""):
     text = user_text or ""
-    return bool(EXPORT_WORDS.search(text) or YES_WORDS.search(text))
+    if EXPORT_WORDS.search(text):
+        return True
+    return bool(YES_WORDS.search(text) and re.search(r"\b(export\w*|excel|file|spreadsheet|report)\b", prev_model_text or "", re.I))
 
 
 def in_standalone_question(text):
@@ -69,6 +72,7 @@ def in_standalone_question(text):
         len(text.split()) >= 2
         and not _FOLLOWUP_RE.search(text)
         and not _looks_like_correction(text)
+        and not _NEEDS_CONTEXT_RE.search(text)
     )
 
 logging.basicConfig(
@@ -97,6 +101,7 @@ def _to_gemini_tools(openai_tools):
 
 
 GEMINI_TOOLS = _to_gemini_tools(tools)
+GEMINI_TOOLS_NO_EXPORT= _to_gemini_tools([t for t in tools if t['function']['name'] not in EXPORT_TOOLS])
 
 
 def _user_text(text):
@@ -268,9 +273,11 @@ def _call_llm(msgs, trim=True, max_retries=3, allow_tools=True):
     system_text = payload[0]["content"]   # msgs[0] is always the system prompt dict
     contents = payload[1:]
 
+    last_user = next((m for m in reversed(msgs) if _is_user_turn_start(m)), None)
+    user_said = "".join(p.text for p in (getattr(last_user, "parts", None) or []) if getattr(p, "text", None))
     config_kwargs = dict(
         system_instruction=system_text,
-        tools=GEMINI_TOOLS,
+        tools=GEMINI_TOOLS if _export_allowed(user_said) else GEMINI_TOOLS_NO_EXPORT,
         max_output_tokens=4096,
         automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True),
     )
@@ -456,16 +463,22 @@ def _compact_tool_result_for_context(result, max_items=10):
         return result
 
     compacted = dict(result)
+    
+    def _value(g):
+        sums= g.get("sums") if isinstance(g, dict) else None
+        return next(iter(sums.values()), 0) if isinstance(sums, dict) else 0
+    
+    if isinstance(compacted.get("groups"), list) and not compacted.get("date_bucket_used"):   # new
+        compacted["groups"] = sorted(compacted["groups"], key=_value, reverse=True)
 
     for list_key in ("records", "counts", "groups", "results"):
         items = compacted.get(list_key)
-        if isinstance(items, list) and len(items) > max_items:
-            total = compacted.get("total_matching_count") or compacted.get("distinct_groups") or len(items)
-            compacted[list_key] = items[:max_items]
-            compacted["note"] = (
-                f"Showing {max_items} of {total} '{list_key}' entries to save context space. "
-                f"Ask for a narrower filter or an export if you need the full set."
-            )
+        limit = 30 if list_key == "groups" else max_items
+        if isinstance(items, list) and len(items) > limit:
+            total = compacted.get("distinct_groups") or compacted.get("total_matching_count") or len(items)
+            compacted[list_key] = items[:limit]
+            compacted["note"] = (f"Showing {limit} of {total} '{list_key}' entries to save context space. "
+                                 f"Ask for a narrower filter or an export if you need the full set.")
             
     if isinstance(compacted.get("groups"), list):
         trimmed_groups = []
@@ -917,6 +930,8 @@ def handle_turn(messages, content, session_id="default", user= None):
         messages.append(_response_content(chat_completion))
 
         response_parts = []
+        email_ready= False
+        
         for fc in function_calls:
             tools_used.add(fc.name)
             result, artifact = run_tool_call(fc, session_id=session_id, turn_id=turn_id, user=user, user_text=content)
@@ -924,11 +939,19 @@ def handle_turn(messages, content, session_id="default", user= None):
                 artifacts.append(artifact)
                 note_artifact(session_id, artifact["path"])
             response_parts.append(_function_response_part(fc, result))
-        # All responses for one model turn go back together in a single user turn.
+            if isinstance(result, dict) and result.get("status") == "awaiting_user_confirmation":
+                email_ready= True
         messages.append(types.Content(role="user", parts=response_parts))
 
+        if email_ready:
+            reply= "The files are ready, Please confirm below to send."
+            note_assistant_message(session_id, reply)
+            messages.append(_model_text(reply))
+            learn_if_correction(session_id, content, reply)
+            return reply, messages, artifacts
+        
         try:
-            chat_completion = _call_llm(messages, trim=False)
+            chat_completion = _call_llm(messages)
         except Exception as e:
             _rollback()
             return f"Error talking to model API: {e}", messages, artifacts
@@ -959,7 +982,7 @@ def handle_turn(messages, content, session_id="default", user= None):
         )))
         messages.append(types.Content(role="user", parts=pending))
         try:
-            chat_completion = _call_llm(messages, trim=False, allow_tools=False)
+            chat_completion = _call_llm(messages, allow_tools=False)
             inp, out = _log_usage(chat_completion, session_id=session_id, turn_id=turn_id, label="budget-exhausted call")
             total_input_tokens += inp
             total_output_tokens += out
@@ -1003,7 +1026,7 @@ def handle_turn(messages, content, session_id="default", user= None):
             "missing."
         ))
         try:
-            chat_completion = _call_llm(messages, trim=False)
+            chat_completion = _call_llm(messages)
             inp, out = _log_usage(chat_completion, session_id=session_id, turn_id=turn_id, label=f"empty-retry {empty_retries}")
             total_input_tokens += inp
             total_output_tokens += out
