@@ -36,3 +36,5 @@ manual_sources/*
 .idea/
 .DS_Store
 Thumbs.db
+
+voice.wav

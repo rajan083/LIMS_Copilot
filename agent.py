@@ -25,7 +25,9 @@ load_dotenv()
 
 genai_client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
 
-MODEL = "gemini-3.1-flash-lite"
+CHAT_MODEL= "gemini-3.1-flash-lite"
+VOICE_MODEL= "gemini-3.6-flash"
+MODEL= CHAT_MODEL
 # MODEL= "gemini-3.8-flash"            "Latest Gemini API models, have to check the tokan usage for this to integrate."
 
 ALLOWED_COLLECTIONS = ["el_orders", "el_order_test_parameter", "app_invoice"]
@@ -267,7 +269,7 @@ def _validate_completion(response):
     return response
 
 
-def _call_llm(msgs, trim=True, max_retries=3, allow_tools=True):
+def _call_llm(msgs, trim=True, max_retries=3, allow_tools=True, model=None):
     payload = _trim_messages(msgs) if trim else msgs
     payload = _stub_old_doc_results(payload)
     system_text = payload[0]["content"]   # msgs[0] is always the system prompt dict
@@ -291,7 +293,7 @@ def _call_llm(msgs, trim=True, max_retries=3, allow_tools=True):
     while True:
         try:
             response = genai_client.models.generate_content(
-                model=MODEL,
+                model=model or MODEL,
                 contents=contents,
                 config=config,
             )
@@ -310,6 +312,31 @@ def _call_llm(msgs, trim=True, max_retries=3, allow_tools=True):
                 continue
 
             raise
+
+
+def transcribe_audio(audio_bytes, mime_type="audio/wav", translate=False):
+    if not VOICE_MODEL:
+        raise RuntimeError("VOICE_MODEL is not set")
+    if translate:
+        instruction = (
+            "Transcribe this audio. If the speech is not in English, translate it into English. "
+            "Return only the final English text, with no commentary. "
+            "If there is no intelligible speech, return exactly: NO_SPEECH"
+        )
+    else:
+        instruction = (
+            "Transcribe this audio exactly, in the language spoken. Return only the transcript, "
+            "with no commentary. If there is no intelligible speech, return exactly: NO_SPEECH"
+        )
+    response = genai_client.models.generate_content(
+        model=VOICE_MODEL,
+        contents=[instruction, types.Part.from_bytes(data=audio_bytes, mime_type=mime_type)],
+        config=types.GenerateContentConfig(
+            automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True),
+        ),
+    )
+    text = (response.text or "").strip()
+    return "" if text.upper().startswith("NO_SPEECH") else text
 
 
 def _fetch_records(args):

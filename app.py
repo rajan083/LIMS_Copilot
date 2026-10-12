@@ -1,14 +1,75 @@
 import streamlit as st
-import os
-import re
-import uuid
-from agent import new_conversation, handle_turn
+import os, re, uuid, hashlib
+from agent import new_conversation, handle_turn, transcribe_audio
 from report_email import get_pending_email, confirm_and_send, cancel_pending_email, is_external
 
 st.set_page_config(page_title="LIMS Copilot", layout="wide")
 
+st.markdown("""
+<style>
+/* round icon-only buttons */
+.st-key-mic_btn button, .st-key-send_btn button {
+    width: 3rem !important;
+    height: 3rem !important;
+    min-height: 3rem !important;
+    padding: 0 !important;
+    border-radius: 50% !important;
+}
+.st-key-mic_btn, .st-key-send_btn { display: flex; justify-content: center; }
+
+/* chat row: text box takes the free space, the two buttons stay fixed-size */
+.st-key-chat_row [data-testid="stHorizontalBlock"] {
+    flex-wrap: nowrap !important;
+    gap: 0.6rem;
+    align-items: center;
+}
+.st-key-chat_row [data-testid="stHorizontalBlock"] > div:nth-child(1) {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+}
+.st-key-chat_row [data-testid="stHorizontalBlock"] > div:nth-child(n+2) {
+    flex: 0 0 3.2rem !important;
+    width: 3.2rem !important;
+    min-width: 3.2rem !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
 PREVIEW_WIDTH = 600
 PREVIEW_HEIGHT = 400
+
+st.session_state.setdefault("draft", "")
+st.session_state.setdefault("show_recorder", False)
+st.session_state.setdefault("rec_n", 0)           # a new recorder after each use, so it starts empty
+
+
+def _toggle_recorder():
+    st.session_state.show_recorder = not st.session_state.show_recorder
+
+
+def _submit():
+    text = st.session_state.draft.strip()
+    if text:
+        st.session_state.pending_input = text
+        st.session_state.draft = ""
+
+
+@st.dialog("Record your question")
+def voice_dialog():
+    st.caption("Click the microphone, speak, then click stop. The text will appear in the message box.")
+    audio = st.audio_input("Record", label_visibility="collapsed")
+    if audio is not None:
+        try:
+            with st.spinner("Transcribing and translating..."):
+                heard = transcribe_audio(audio.getvalue(), audio.type or "audio/wav", translate=True)
+        except Exception as e:
+            st.error(f"Transcription failed: {e}")
+            return
+        if heard:
+            st.session_state.voice_result = heard      # picked up by the main page below
+            st.rerun()                                 # closes the dialog
+        else:
+            st.warning("No speech detected. Record again.")
 
 
 def _role_and_content(msg):
@@ -133,7 +194,8 @@ for turn_idx, turn in enumerate(st.session_state.display_turns):
         for art_idx, artifact in enumerate(turn.get("artifacts", [])):
             _render_artifact(artifact, key_prefix=f"turn{turn_idx}_art{art_idx}")
 
-user_input = st.chat_input("Ask about lab data, procedures, or reports...")
+
+user_input = st.session_state.pop("pending_input", None)
 
 if user_input:
     st.session_state.display_turns.append({"role": "user", "content": user_input, "artifacts": []})
@@ -157,9 +219,9 @@ if pending:
     c = pending["contact"]
     who = f"{c['name']} ({c['org']}) " if c.get("name") else ""
     warn = "  ⚠ outside the organisation" if is_external(c["email"]) else ""
-    if c.get("source") == "typed":
+    if c.get("source") == "shown":
         warn += "⚠ this address was not typed by you, check it"
-    names = ", ".join(_basename(f) for f in pending["files"])
+    names = ", ".join(_basename(f) for f in (pending.get("files") or [pending["files"]]))
     st.warning(f"Send **{names}** to {who}**{c['email']}**?{warn}")
     with st.expander("Subject and message"):
         st.write(f"**{pending['subject']}**")
@@ -172,3 +234,51 @@ if pending:
     if col_b.button("Cancel", key="email_cancel", icon=":material/close:", use_container_width=True):
         cancel_pending_email(st.session_state.session_id, user="local-test")
         st.rerun()
+
+
+if "voice_result" in st.session_state:                 # must run before the text area is created
+    heard = st.session_state.pop("voice_result")
+    st.session_state.draft = f"{st.session_state.draft} {heard}".strip()
+
+bottom = getattr(st, "bottom", None) or st._bottom     # the same area st.chat_input uses
+with bottom:
+    # ---- recorder bar, directly above the chat box ----
+    if st.session_state.show_recorder:
+        note = st.session_state.pop("voice_note", None)
+        if note:
+            st.warning(note)
+        audio = st.audio_input("Record", label_visibility="collapsed",
+                               key=f"rec_{st.session_state.rec_n}")
+        if audio is not None:
+            try:
+                with st.spinner("Transcribing and translating..."):
+                    heard = transcribe_audio(audio.getvalue(), audio.type or "audio/wav", translate=True)
+            except Exception as e:
+                heard = ""
+                st.session_state.voice_note = f"Transcription failed: {e}"
+            if heard:
+                st.session_state.voice_result = heard
+                st.session_state.show_recorder = False          # close the bar
+            elif "voice_note" not in st.session_state:
+                st.session_state.voice_note = "No speech detected. Record again."
+            st.session_state.rec_n += 1
+            st.rerun()
+
+    # ---- chat box row ----
+    with st.container(key="chat_row"):
+        col_text, col_mic, col_send = st.columns([10, 1, 1], vertical_alignment="center")
+
+        with col_text:
+            st.text_area("Message", key="draft", height=68, label_visibility="collapsed",
+                         placeholder="Ask about lab data, procedures, or reports...")
+
+        with col_mic:
+            opened = st.session_state.show_recorder
+            st.button("", key="mic_btn",
+                      icon=":material/close:" if opened else ":material/mic:",
+                      on_click=_toggle_recorder,
+                      help="Close recorder" if opened else "Speak your question")
+
+        with col_send:
+            st.button("", key="send_btn", type="primary", icon=":material/send:",
+                      on_click=_submit, help="Send")

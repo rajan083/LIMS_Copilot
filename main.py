@@ -1,6 +1,9 @@
-import os
+import os, time
+import numpy as np
+from scipy.io import wavfile
+import sounddevice as sd
 from report_email import get_pending_email, confirm_and_send, cancel_pending_email
-from agent import new_conversation, handle_turn
+from agent import new_conversation, handle_turn, transcribe_audio
 from rag_pipeline import ingest_documents, save_learned_answer
 
 CLI_USER = "cli-user"
@@ -11,8 +14,40 @@ last_exchange = None
 
 print("Hola, señor! Welcome to Qualitec group's AI portal, how should I assist you today.\n")
 
+def record(path="voice.wav", rate=16000):
+    chunks=[]
+    stream= sd.InputStream(samplerate=rate, channels=1, dtype="int16",
+                           callback= lambda d,f,t,s: chunks.append(d.copy()))
+    input("Press Enter to start recording...")
+    with stream:
+        input("Recording...press Enter to stop.")
+    if not chunks:
+        return None
+    audio = np.concatenate(chunks)
+    if int(np.abs(audio).max()) < 300:
+        print("[very quiet: check your microphone]")
+        return None
+    wavfile.write(path, rate, audio)
+    return path
+
+def stt(path, retries=3):
+    with open(path, 'rb') as f:
+        audio= f.read()
+    for attempt in range(retries):
+        try:
+            return transcribe_audio(audio, "audio/wav")
+        except RuntimeError:
+            raise
+        except Exception as e:
+            if attempt== retries-1:
+                raise
+            wait= 2*(attempt+1)
+            print(f'[retrying in {wait}s: {e}]')
+            time.sleep(wait)
+            
+
 while True:
-    content = input("You: ").strip()
+    content = input("You: (type, or /v for voice): ").strip()
 
     if content.lower() in ("exit", "quit"):
         print("Goodbye!")
@@ -34,6 +69,37 @@ while True:
             result = save_learned_answer(question, answer)
             print(f"[learn] {result}\n")
         continue
+    
+    if content.lower()== "/v":
+        wav= record()
+        if not wav:
+            print("[no audio captured]\n")
+            continue
+        try:
+            heard= stt(wav).strip()
+        except Exception as e:
+            print(f'[transcription failed]: {e}\n')
+            continue
+        if not heard:
+            print("\nBot: [Couldn't hear anything]\n")
+            continue
+        print(f"You (voice): {heard}")
+        while True:
+            ans = input("Send this? (y/n/edit): ").strip().lower()
+            if ans in ("", "y", "yes"):
+                content = heard
+                break
+            if ans in ("n", "no"):
+                content = None
+                break
+            if ans == "edit":
+                content = input("Edit: ").strip() or heard
+                break
+            print("Please type y, n or edit.")
+        if content is None:
+            continue
+        content= (input("Edit: ").strip() or heard) if ans == "edit" else heard
+
 
     print("  [thinking...]")
     reply, messages, artifacts = handle_turn(messages, content, session_id= CLI_SESSION, user=CLI_USER)
