@@ -3,6 +3,7 @@ import json
 import re
 import time
 import uuid
+import tempfile
 import logging
 from dotenv import load_dotenv
 from google import genai
@@ -25,10 +26,7 @@ load_dotenv()
 
 genai_client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
 
-CHAT_MODEL= "gemini-3.1-flash-lite"
-VOICE_MODEL= "gemini-3.6-flash"
-MODEL= CHAT_MODEL
-# MODEL= "gemini-3.8-flash"            "Latest Gemini API models, have to check the tokan usage for this to integrate."
+MODEL= os.environ.get("MODEL")
 
 ALLOWED_COLLECTIONS = ["el_orders", "el_order_test_parameter", "app_invoice"]
 SCHEMA_CATALOG = build_schema_catalog(collection_names=ALLOWED_COLLECTIONS)
@@ -314,9 +312,9 @@ def _call_llm(msgs, trim=True, max_retries=3, allow_tools=True, model=None):
             raise
 
 
-def transcribe_audio(audio_bytes, mime_type="audio/wav", translate=False):
-    if not VOICE_MODEL:
-        raise RuntimeError("VOICE_MODEL is not set")
+def transcribe_with_model(audio_bytes, mime_type="audio/wav", translate=False):
+    if not MODEL:
+        raise RuntimeError("MODEL is not set")
     if translate:
         instruction = (
             "Transcribe this audio. If the speech is not in English, translate it into English. "
@@ -329,7 +327,7 @@ def transcribe_audio(audio_bytes, mime_type="audio/wav", translate=False):
             "with no commentary. If there is no intelligible speech, return exactly: NO_SPEECH"
         )
     response = genai_client.models.generate_content(
-        model=VOICE_MODEL,
+        model=MODEL,
         contents=[instruction, types.Part.from_bytes(data=audio_bytes, mime_type=mime_type)],
         config=types.GenerateContentConfig(
             automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True),
@@ -337,6 +335,45 @@ def transcribe_audio(audio_bytes, mime_type="audio/wav", translate=False):
     )
     text = (response.text or "").strip()
     return "" if text.upper().startswith("NO_SPEECH") else text
+
+
+def transcribe_local(path, translate=False):
+    import whisper
+    import numpy as np
+    from math import gcd
+    from scipy.io import wavfile
+    from scipy.signal import resample_poly
+    
+    sr, data= wavfile.read(path)
+    audio= data.astype(np.float32)/32768
+    if audio.ndim > 1:
+        audio= audio.mean(axis=1)
+    if sr != 16000:
+        g= gcd(16000, sr)
+        audio= resample_poly(audio, 16000//g, sr//g).astype(np.float32)
+        
+    model= whisper.load_model('small')
+    response= model.transcribe(audio, fp16= False, task= "translate" if translate else "transcribe")
+    return response['text']
+
+
+def transcribe_bytes(audio_bytes, retries=3):
+    for attempt in range(retries):
+        try:
+            return transcribe_with_model(audio_bytes, "audio/wav", translate=True)
+        except Exception as e:
+            logger.warning(f"[transcribe] attempt { attempt+1} failed: {e}")
+            if attempt < retries-1:
+                time.sleep(2*(attempt+1))
+    
+    with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
+        tmp.write(audio_bytes)
+        tmp_path= tmp.name
+
+    try:
+        return transcribe_local(tmp_path, translate=True)
+    finally:
+        os.remove(tmp_path)
 
 
 def _fetch_records(args):

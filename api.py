@@ -22,10 +22,11 @@ load_dotenv()
 
 from fastapi import FastAPI, Header, HTTPException, Depends, Request
 from fastapi.responses import FileResponse
+from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel, Field
 
 import keystore
-from agent import new_conversation, handle_turn
+from agent import new_conversation, handle_turn, transcribe_bytes
 from report_email import (
     get_pending_email, confirm_and_send, cancel_pending_email, clear_session, is_external,
 )
@@ -42,6 +43,8 @@ if ENABLE_ADMIN and not ADMIN_KEY:
 CONVERSATION_TTL = 2 * 3600        # idle conversations (and their files) are dropped after 2 hours
 MAX_MESSAGE_CHARS = 4000
 USER_ID_RE = re.compile(r"^[\w.@:+-]{1,128}$")
+
+MAX_AUDIO_BYTES= 5_000_000
 
 keystore.init()
 
@@ -175,6 +178,20 @@ def send_message(conv_id: str, body: MessageIn, user: str = Depends(authenticate
         }
     finally:
         conv["lock"].release()
+
+
+@app.post("/v1/transcribe")
+async def transcribe(request: Request, user: str= Depends(authenticate)):
+    audio= await request.body()
+    if not audio or len(audio)> MAX_AUDIO_BYTES:
+        raise HTTPException(400, "Missing or too long recording")
+    try:
+        text= await run_in_threadpool(transcribe_bytes, audio)
+    except Exception:
+        logger.exception("transcription failed")
+        raise HTTPException(502, "Transcription failed")
+    return {"text": text.strip()}
+
 
 
 @app.get("/v1/artifacts/{artifact_id}")

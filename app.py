@@ -1,12 +1,134 @@
 import streamlit as st
-import os, re, uuid, hashlib
-from agent import new_conversation, handle_turn, transcribe_audio
+import os, re, uuid, time, tempfile
+from agent import new_conversation, handle_turn, transcribe_with_model, transcribe_local
 from report_email import get_pending_email, confirm_and_send, cancel_pending_email, is_external
 
 st.set_page_config(page_title="LIMS Copilot", layout="wide")
 
+
+# ---------------------------------------------------------------- browser behaviour (one script, installed once)
+#  * Enter in the message box sends (Shift+Enter = new line)
+#  * opening the recorder starts recording by itself
+#  * Enter stops the recording; Enter again sends the transcript
+#  * the page scrolls to the newest message
+_UI_JS = r"""
+(() => {
+  let D = document;
+  if (!D.querySelector('[data-testid="stApp"]')) {          // running inside an iframe: use the parent page
+    try { D = window.parent.document; } catch (e) { return; }
+  }
+  const W = D.defaultView;
+  if (W.__limsUI_v2) return;                                // install only once
+  W.__limsUI_v2 = true;
+
+  const $ = (s) => D.querySelector(s);
+  const widget = () => $('[data-testid="stAudioInput"]');
+  const audioBtn = (re) => {
+    const w = widget();
+    if (!w) return null;
+    return Array.from(w.querySelectorAll('button')).find(b =>
+      re.test((b.getAttribute('aria-label') || '') + ' ' + (b.title || '') + ' ' + (b.textContent || ''))) || null;
+  };
+  const block = (e) => { e.preventDefault(); e.stopPropagation(); };
+
+  // ---- send
+  const send = () => {
+    const ta = $('.st-key-draft textarea');
+    if (ta && D.activeElement === ta) ta.blur();            // commits the text to Streamlit
+    setTimeout(() => {
+      const b = $('.st-key-send_btn button');
+      if (b) b.click();
+      setTimeout(() => { const t = $('.st-key-draft textarea'); if (t) t.focus(); }, 500);
+    }, 80);
+  };
+
+  // ---- Enter key
+  D.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter' || e.shiftKey || e.ctrlKey || e.metaKey || e.altKey || e.isComposing) return;
+    const t = e.target;
+    const inDraft = t.closest && t.closest('.st-key-draft');
+    const onMic = t.closest && t.closest('.st-key-mic_btn');
+    if (!inDraft && !onMic && t !== D.body) return;         // never hijack other buttons
+
+    const stop = audioBtn(/stop/i);
+    if (stop) { block(e); stop.click(); return; }           // recording -> stop
+
+    const ta = $('.st-key-draft textarea');
+    if (ta && ta.value.trim()) { block(e); send(); return; } // text -> send
+
+    if (widget()) {                                          // recorder open but idle -> start
+      const rec = audioBtn(/record|start/i);
+      if (rec) { block(e); rec.click(); return; }
+    }
+    if (inDraft) block(e);                                   // empty box: no stray new lines
+  }, true);
+
+  // ---- auto-start recording when the recorder appears
+  let started = null;
+  const autostart = () => {
+    const w = widget();
+    if (!w) { started = null; return; }
+    const host = w.closest('[class*="st-key-rec_"]');
+    const m = host && String(host.className).match(/st-key-rec_\d+/);
+    const id = m ? m[0] : 'x';
+    if (started === id) return;
+    if (audioBtn(/stop/i)) { started = id; return; }
+    const b = audioBtn(/record|start/i);
+    if (b) { started = id; setTimeout(() => b.click(), 200); }
+  };
+
+  // ---- scroll to newest message
+  const scroller = () => $('[data-testid="stMain"]') || $('section.main') || $('[data-testid="stAppViewContainer"]');
+  const count = () => D.querySelectorAll('[data-testid="stChatMessage"]').length;
+  let seen = count(), lastH = 0, queued = false;
+  const tick = () => {
+    queued = false;
+    const m = scroller(), n = count();
+    if (m) {
+      const h = m.scrollHeight;
+      const nearBottom = (lastH - (m.scrollTop + m.clientHeight)) < 250;
+      if (n > seen || (h > lastH && nearBottom)) m.scrollTo({ top: h, behavior: 'smooth' });
+      lastH = h;
+    }
+    seen = n;
+    autostart();
+  };
+  new MutationObserver(() => {
+    if (!queued) { queued = true; requestAnimationFrame(tick); }
+  }).observe(D.body, { childList: true, subtree: true });
+  tick();
+})();
+"""
+
+
+def _transcribe(audio_file, retries=3):
+    audio_bytes = audio_file.getvalue()
+    mime = audio_file.type or "audio/wav"
+
+    for attempt in range(retries):
+        try:
+            return transcribe_with_model(audio_bytes, mime, translate=True)
+        except RuntimeError:
+            raise
+        except Exception:
+            if attempt < retries - 1:
+                time.sleep(2 * (attempt + 1))
+
+    # Model failed on every try: fall back to local Whisper
+    with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
+        tmp.write(audio_bytes)
+        tmp_path = tmp.name
+    try:
+        return transcribe_local(tmp_path, translate=True)
+    finally:
+        os.remove(tmp_path)
+
+
 st.markdown("""
 <style>
+/* hidden holder for the script below */
+.st-key-js_host { display: none; }
+
 /* round icon-only buttons */
 .st-key-mic_btn button, .st-key-send_btn button {
     width: 3rem !important;
@@ -35,6 +157,13 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+with st.container(key="js_host"):
+    try:
+        st.html(f"<script>{_UI_JS}</script>", unsafe_allow_javascript=True)
+    except TypeError:                                   # older Streamlit without unsafe_allow_javascript
+        import streamlit.components.v1 as components
+        components.html(f"<script>{_UI_JS}</script>", height=0)
+
 PREVIEW_WIDTH = 600
 PREVIEW_HEIGHT = 400
 
@@ -54,30 +183,6 @@ def _submit():
         st.session_state.draft = ""
 
 
-@st.dialog("Record your question")
-def voice_dialog():
-    st.caption("Click the microphone, speak, then click stop. The text will appear in the message box.")
-    audio = st.audio_input("Record", label_visibility="collapsed")
-    if audio is not None:
-        try:
-            with st.spinner("Transcribing and translating..."):
-                heard = transcribe_audio(audio.getvalue(), audio.type or "audio/wav", translate=True)
-        except Exception as e:
-            st.error(f"Transcription failed: {e}")
-            return
-        if heard:
-            st.session_state.voice_result = heard      # picked up by the main page below
-            st.rerun()                                 # closes the dialog
-        else:
-            st.warning("No speech detected. Record again.")
-
-
-def _role_and_content(msg):
-    if isinstance(msg, dict):
-        return msg.get("role"), msg.get("content")
-    return getattr(msg, "role", None), getattr(msg, "content", None)
-
-
 def _basename(path):
     return path.replace("\\", "/").split("/")[-1]
 
@@ -95,10 +200,6 @@ def _extract_plot_dimensions(html_content, default=(1100, 700)):
         height = default[1]
 
     return width, height
-
-
-DIALOG_MAX_WIDTH = 1100
-DIALOG_MAX_HEIGHT = 650
 
 
 def _render_chart_png(path, key_prefix=""):
@@ -212,8 +313,8 @@ if user_input:
             _render_artifact(artifact, key_prefix=f"turnNEW_art{art_idx}")
 
     st.session_state.display_turns.append({"role": "assistant", "content": reply, "artifacts": artifacts})
-    
-    
+
+
 pending = get_pending_email(st.session_state.session_id, user="local-test")
 if pending:
     c = pending["contact"]
@@ -221,7 +322,7 @@ if pending:
     warn = "  ⚠ outside the organisation" if is_external(c["email"]) else ""
     if c.get("source") == "shown":
         warn += "⚠ this address was not typed by you, check it"
-    names = ", ".join(_basename(f) for f in (pending.get("files") or [pending["files"]]))
+    names = ", ".join(_basename(f) for f in (pending.get("files") or [pending["file"]]))
     st.warning(f"Send **{names}** to {who}**{c['email']}**?{warn}")
     with st.expander("Subject and message"):
         st.write(f"**{pending['subject']}**")
@@ -247,12 +348,13 @@ with bottom:
         note = st.session_state.pop("voice_note", None)
         if note:
             st.warning(note)
+        st.caption("Recording starts automatically. Press Enter to stop.")
         audio = st.audio_input("Record", label_visibility="collapsed",
                                key=f"rec_{st.session_state.rec_n}")
         if audio is not None:
             try:
                 with st.spinner("Transcribing and translating..."):
-                    heard = transcribe_audio(audio.getvalue(), audio.type or "audio/wav", translate=True)
+                    heard = _transcribe(audio)
             except Exception as e:
                 heard = ""
                 st.session_state.voice_note = f"Transcription failed: {e}"
@@ -270,7 +372,7 @@ with bottom:
 
         with col_text:
             st.text_area("Message", key="draft", height=68, label_visibility="collapsed",
-                         placeholder="Ask about lab data, procedures, or reports...")
+                         placeholder="Ask about lab data, procedures, or reports... (Enter to send)")
 
         with col_mic:
             opened = st.session_state.show_recorder
