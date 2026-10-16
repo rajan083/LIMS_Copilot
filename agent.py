@@ -8,6 +8,7 @@ import logging
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
+from functools import lru_cache
 
 from system_prompt import build_system_prompt
 from excel_export import export_excel_file, export_excel_file_multi_sheet
@@ -33,7 +34,7 @@ SCHEMA_CATALOG = build_schema_catalog(collection_names=ALLOWED_COLLECTIONS)
 
 MAX_ROUND_TOOLS = 12
 
-ANSWER_CACHEABLE_TOOLS = {"search_documents", "multi_hop_search", "list_collections", "describe_field"}
+ANSWER_CACHEABLE_TOOLS = {"search_documents", "multi_hop_search"}
 
 MIDCHAT_CACHE_THRESHOLD = 0.75
 
@@ -58,6 +59,30 @@ EXPORT_TOOLS = {"export_records_to_excel", "export_joined_records_to_excel", "ex
 EXPORT_WORDS = re.compile(r"\b(export\w*|excel|xlsx|spreadsheet|sheets?|csv|download\w*)\b", re.I)
 
 YES_WORDS = re.compile(r"^\s*(yes|yeah|yep|sure|ok|okay|please do|go ahead|do it)\b", re.I)
+
+COLLECTION_ROLES= {
+    "el_orders": {"lab", "accounts", "admin"},
+    "el_order_test_parameter": {"lab", "admin"},
+    "app_invoice": {"accounts", "admin"},
+}
+EXPORT_ROLES= {'accounts', 'lab', 'admin'}
+TOOL_ROLES= {
+    "prepare_report_email": {"accounts", "admin"},
+    "cache_stats": {"admin"},
+    **{t: EXPORT_ROLES for t in EXPORT_TOOLS},
+}
+
+
+def _allowed_collections(roles):
+    if roles is None:
+        return tuple(ALLOWED_COLLECTIONS)
+    return tuple(c for c in ALLOWED_COLLECTIONS if set(roles or ()) & COLLECTION_ROLES.get(c, set()))
+
+
+@lru_cache(maxsize= None)
+def _catalog_for(names):
+    return build_schema_catalog(collection_names=list(names))
+
 
 def _export_allowed(user_text, prev_model_text=""):
     text = user_text or ""
@@ -560,7 +585,7 @@ def _compact_tool_result_for_context(result, max_items=10):
 
     return compacted
 
-def run_tool_call(function_call, session_id="default", turn_id="", user= None, user_text=""):
+def run_tool_call(function_call, session_id="default", turn_id="", user= None, user_text="", roles=None):
     name = function_call.name
     artifact = None
     tag = f"[{session_id}|{turn_id}]"
@@ -572,11 +597,21 @@ def run_tool_call(function_call, session_id="default", turn_id="", user= None, u
         print(f"[tool_call] {name} args={json.dumps(args, indent=2, default=str)}")
         logger.info(f"{tag}[tool_call] {name} args={json.dumps(args, indent=2, default=str)}")
         
-        if name in EXPORT_TOOLS and not _export_allowed(user_text):
+        allowed= _allowed_collections(roles)
+        blocked= [] if roles is None else [c for c in ALLOWED_COLLECTIONS if c not in allowed and c in json.dumps(args)]
+        tool_roles= TOOL_ROLES.get(name)
+        no_tool= roles is not None and tool_roles is not None and not (set(roles or ()) & tool_roles)
+        
+        if no_tool:
+            result = {"error": f"Access denied: this user's role cannot use {name}. Tell the user they do not have permission for that action."}
+        
+        elif blocked:
+            result= {"error": f"Access denied: this user's role cannot use {', '.join(blocked)}. Tell the user they do not have permission for that data and do not try another way to get it."}        
+        elif name in EXPORT_TOOLS and not _export_allowed(user_text):
             result = {"error": "The user did not ask for a file. Do not export. Show the data in chat, or ask whether they want it exported and wait for their answer."}
 
         elif name == "list_collections":
-            result = get_shallow_summary(SCHEMA_CATALOG)
+            result = get_shallow_summary(SCHEMA_CATALOG if roles is None else _catalog_for(allowed))
 
         elif name == "describe_field":
             result = describe_field_lookup(
@@ -915,7 +950,7 @@ def run_tool_call(function_call, session_id="default", turn_id="", user= None, u
 
 
 
-def handle_turn(messages, content, session_id="default", user= None):
+def handle_turn(messages, content, session_id="default", user= None, roles= None):
     
     turn_id = uuid.uuid4().hex[:8]
     logger.info(f"[{session_id}|{turn_id}] New turn: {content!r}")
@@ -998,7 +1033,7 @@ def handle_turn(messages, content, session_id="default", user= None):
         
         for fc in function_calls:
             tools_used.add(fc.name)
-            result, artifact = run_tool_call(fc, session_id=session_id, turn_id=turn_id, user=user, user_text=content)
+            result, artifact = run_tool_call(fc, session_id=session_id, turn_id=turn_id, user=user, user_text=content, roles=roles)
             if artifact:
                 artifacts.append(artifact)
                 note_artifact(session_id, artifact["path"])

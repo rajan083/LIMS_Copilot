@@ -1,14 +1,3 @@
-"""
-LIMS Copilot HTTP API.
-
-Other applications (a portal, a website backend) call this service server-to-server.
-Every request needs:
-    X-API-Key : a key created with `python keystore.py create <app-name>`
-    X-User-Id : the user the calling application has already logged in
-
-Run (single worker, because conversations are held in memory):
-    uvicorn api:app --host 0.0.0.0 --port 8000
-"""
 import os
 import re
 import uuid
@@ -26,7 +15,7 @@ from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel, Field
 
 import keystore
-from agent import new_conversation, handle_turn, transcribe_bytes
+from agent import new_conversation, handle_turn, transcribe_bytes, TOOL_ROLES
 from report_email import (
     get_pending_email, confirm_and_send, cancel_pending_email, clear_session, is_external,
 )
@@ -73,6 +62,10 @@ def authenticate(request: Request, x_api_key: str = Header(None), x_user_id: str
     # users from different applications can never collide
     return f"{app_name}:{x_user_id.strip()}"
 
+def get_roles(x_user_roles: str= Header(None)):
+    if x_user_roles is None:
+        return None
+    return [r.strip().lower() for r in x_user_roles.split(",") if r.strip()]
 
 def require_admin(x_admin_key: str = Header(None)):
     if not x_admin_key or not hmac.compare_digest(x_admin_key.encode(), ADMIN_KEY.encode()):
@@ -158,7 +151,7 @@ def create_conversation(user: str = Depends(authenticate)):
 
 
 @app.post("/v1/conversations/{conv_id}/messages")
-def send_message(conv_id: str, body: MessageIn, user: str = Depends(authenticate)):
+def send_message(conv_id: str, body: MessageIn, user: str = Depends(authenticate), roles=Depends(get_roles)):
     conv = _get_conv(user, conv_id)
     if not conv["lock"].acquire(blocking=False):       # one turn at a time per conversation
         raise HTTPException(409, "The previous message is still being processed")
@@ -166,7 +159,7 @@ def send_message(conv_id: str, body: MessageIn, user: str = Depends(authenticate
         sid = _session_id(user, conv_id)
         try:
             reply, conv["messages"], artifacts = handle_turn(
-                conv["messages"], body.message, session_id=sid, user=user)
+                conv["messages"], body.message, session_id=sid, user=user, roles=roles)
         except Exception:
             logger.exception("handle_turn failed")
             raise HTTPException(500, "The assistant could not process this message")
@@ -209,7 +202,9 @@ def email_pending(conv_id: str, user: str = Depends(authenticate)):
 
 
 @app.post("/v1/conversations/{conv_id}/email/confirm")
-def email_confirm(conv_id: str, user: str = Depends(authenticate)):
+def email_confirm(conv_id: str, user: str = Depends(authenticate), roles= Depends(get_roles)):
+    if roles is not None and not (set(roles) & TOOL_ROLES['prepare_report_email']):
+        raise HTTPException(403, "Your role is not allowed to send reports")
     _get_conv(user, conv_id)
     ok, msg = confirm_and_send(_session_id(user, conv_id), user=user)
     return {"ok": ok, "message": msg}
