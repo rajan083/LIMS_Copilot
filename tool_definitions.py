@@ -527,4 +527,33 @@ tools = [
             },
         },
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "create_powerbi_file",
+            "description": (
+                "Create a Power BI file (.pbids) that opens in Power BI Desktop with live data. "
+                "Use only when the user asks for Power BI or a dashboard. "
+                "kind='records' for row-level data, 'count' for counts per group, 'sum' for totals per group."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "collection_name": {"type": "string"},
+                    "kind": {"type": "string", "enum": ["records", "count", "sum"]},
+                    "fields": {"type": "array", "items": {"type": "string"}},
+                    "group_by": {"type": "string"},
+                    "sum_fields": {"type": "array", "items": {"type": "string"}},
+                    "filters": {"type": "object"},
+                    "date_field": {"type": "string"},
+                    "date_from": {"type": "string", "description": "YYYY-MM-DD"},
+                    "date_to": {"type": "string", "description": "YYYY-MM-DD"},
+                    "date_bucket": {"type": "string", "enum": ["auto", "day", "week", "month"]},
+                    "limit": {"type": "integer"},
+                    "label": {"type": "string"},
+                },
+                "required": ["collection_name"],
+            },
+        },
+    },
 ]

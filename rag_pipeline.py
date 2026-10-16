@@ -13,17 +13,20 @@ import chromadb
 import logging
 from sentence_transformers import SentenceTransformer
 
+#remove this line below, when changing the embedding model for transformer.
+os.environ.setdefault("HF_HUB_OFFLINE", "1")        #suppresses the H_F warning in the tool_call, and tells the model, that the chunking is offline.
+
 VECTOR_STORE_DIR = os.path.join(os.path.dirname(__file__), "vector_store")
 DOCUMENTS_DIR = os.path.join(os.path.dirname(__file__), "documents")
 MANIFEST_PATH = os.path.join(VECTOR_STORE_DIR, "manifest.json")
 CACHE_JSON_PATH = os.path.join(VECTOR_STORE_DIR, "search_cache.json")
 COLLECTION_NAME = "lims_documents"
-EMBEDDING_MODEL = "all-MiniLM-L6-v2"
+EMBEDDING_MODEL = "all-MiniLM-L6-v2"       #before changing the embedding model remove the os.environ.setdefault(), so it can download the embeddings accordingly.
 
 # Bump this whenever the ingest format changes (chunking, metadata, frontmatter
 # handling). It is folded into every file hash, so all files are re-ingested
 # automatically on the next run, with no need to delete manifest.json by hand.
-INGEST_VERSION = "okf-3"
+INGEST_VERSION = "okf-4"        #chaging the version here will reingest the documents again, without the need to delete the previous files, so with every change in pipeline embeddings, update the version, so the hash changes.
 
 # Semantic chunking tuning
 BREAKPOINT_PERCENTILE = 90   # higher = fewer, larger chunks; lower = more, smaller chunks
@@ -61,10 +64,13 @@ logging.basicConfig(
 )
 logger = logging.getLogger('lims.rag')
 
-def _get_model():
+def _get_model():                           #stops the model to ask if the files are changedm and tells the embedding model exists locally saves 20 rounds and 6-7 seconds.
     global _model
     if _model is None:
-        _model = SentenceTransformer(EMBEDDING_MODEL)
+        try:
+            _model = SentenceTransformer(EMBEDDING_MODEL, local_files_only=True)
+        except:
+            _model = SentenceTransformer(EMBEDDING_MODEL)
     return _model
 
 
@@ -78,6 +84,13 @@ def _get_collection():
         )
     return _collection
 
+
+def warm_up():                      #load the server with dummy search, so the model is loaded, when the real question arrives. takes around 8 seconds when the server starts.
+    model= _get_model()
+    emb= model.encode(["warm up"], normalize_embeddings=True).tolist()
+    collection= _get_collection()
+    if collection.count():
+        collection.query(query_embeddings=emb, n_results=1)
 
 def _split_sentences(text):
     text = re.sub(r"\s+", " ", text).strip()
@@ -503,7 +516,7 @@ def clear_search_cache():
 def _fetch_related(collection, linked_sources, limit=MAX_RELATED_DOCS):
     """Return the text of each linked document (all its chunks, in order), capped at
     RELATED_MAX_CHARS. Near-empty documents are skipped; they only waste tokens."""
-    linked_sources = sorted(linked_sources)
+    linked_sources = list(linked_sources)
     if not linked_sources:
         return []
 
@@ -550,7 +563,7 @@ def _search_documents_uncached(query, top_k, min_relevance, doc_type=None, expan
     results = collection.query(**query_kwargs)
 
     matches = []
-    linked = set()
+    linked = []
     for doc, meta, dist in zip(
         results["documents"][0], results["metadatas"][0], results["distances"][0]
     ):
@@ -562,7 +575,9 @@ def _search_documents_uncached(query, top_k, min_relevance, doc_type=None, expan
                 "chunk_index": meta.get("chunk_index"),
                 "relevance_score": score,
             })
-            linked.update(l for l in (meta.get("links") or "").split("|") if l)
+            for l in (meta.get("links") or "").split("!"):
+                if l and l not in linked:
+                    linked.append(l)
 
     if not matches:
         return {"message": "No sufficiently relevant documents found for this query."}
@@ -571,7 +586,8 @@ def _search_documents_uncached(query, top_k, min_relevance, doc_type=None, expan
 
     if expand:
         # Don't repeat documents that were already matched directly
-        linked -= {m["source"] for m in matches}
+        matched= {m["source"] for m in matches}
+        linked = {l for l in linked if l not in matched}
         related = _fetch_related(collection, linked)
         if related:
             result["related"] = related

@@ -28,6 +28,7 @@ load_dotenv()
 genai_client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
 
 MODEL= os.environ.get("MODEL")
+FALLBACK_MODELS = [m.strip() for m in os.environ.get("FALLBACK_MODELS", "").split(",") if m.strip()]
 
 ALLOWED_COLLECTIONS = ["el_orders", "el_order_test_parameter", "app_invoice"]
 SCHEMA_CATALOG = build_schema_catalog(collection_names=ALLOWED_COLLECTIONS)
@@ -54,9 +55,9 @@ _NEEDS_CONTEXT_RE = re.compile(
 )
 
 
-EXPORT_TOOLS = {"export_records_to_excel", "export_joined_records_to_excel", "export_summary_to_excel"}
+EXPORT_TOOLS = {"export_records_to_excel", "export_joined_records_to_excel", "export_summary_to_excel", "create_powerbi_file"}
 
-EXPORT_WORDS = re.compile(r"\b(export\w*|excel|xlsx|spreadsheet|sheets?|csv|download\w*)\b", re.I)
+EXPORT_WORDS = re.compile(r"\b(export\w*|excel|xlsx|spreadsheet|sheets?|csv|download\w*|power\s?bi|dashboard)\b", re.I)
 
 YES_WORDS = re.compile(r"^\s*(yes|yeah|yep|sure|ok|okay|please do|go ahead|do it)\b", re.I)
 
@@ -79,9 +80,14 @@ def _allowed_collections(roles):
     return tuple(c for c in ALLOWED_COLLECTIONS if set(roles or ()) & COLLECTION_ROLES.get(c, set()))
 
 
-@lru_cache(maxsize= None)
 def _catalog_for(names):
-    return build_schema_catalog(collection_names=list(names))
+    return {k: v for k,v in SCHEMA_CATALOG.items() if k in names}
+
+@lru_cache(maxsize= None)
+def _schema_text_for(names):
+    if not names:
+        return "{}"
+    return json.dumps(get_shallow_summary(_catalog_for(names)), default=str)
 
 
 def _export_allowed(user_text, prev_model_text=""):
@@ -89,6 +95,15 @@ def _export_allowed(user_text, prev_model_text=""):
     if EXPORT_WORDS.search(text):
         return True
     return bool(YES_WORDS.search(text) and re.search(r"\b(export\w*|excel|file|spreadsheet|report)\b", prev_model_text or "", re.I))
+
+
+_HOWTO_RE= re.compile(
+    r"\b(how (do|can|to|should)|where (do|can|is)|manual|screen|button|menu|navigate)\b",
+    re.I,
+)
+
+def _wants_schema(user_said):
+    return not _HOWTO_RE.search(user_said or "")
 
 
 def in_standalone_question(text):
@@ -295,11 +310,15 @@ def _validate_completion(response):
 def _call_llm(msgs, trim=True, max_retries=3, allow_tools=True, model=None):
     payload = _trim_messages(msgs) if trim else msgs
     payload = _stub_old_doc_results(payload)
-    system_text = payload[0]["content"]   # msgs[0] is always the system prompt dict
+    system_text = payload[0]["content"]
     contents = payload[1:]
 
     last_user = next((m for m in reversed(msgs) if _is_user_turn_start(m)), None)
     user_said = "".join(p.text for p in (getattr(last_user, "parts", None) or []) if getattr(p, "text", None))
+    
+    schema= payload[0].get("schema")
+    if schema and _wants_schema(user_said):
+        system_text += ("\n\nCollections and their top-level fields (already loaded, so do not call list_collections):\n" + schema)    
     config_kwargs = dict(
         system_instruction=system_text,
         tools=GEMINI_TOOLS if _export_allowed(user_said) else GEMINI_TOOLS_NO_EXPORT,
@@ -334,10 +353,17 @@ def _call_llm(msgs, trim=True, max_retries=3, allow_tools=True, model=None):
                 attempt += 1
                 continue
 
+            if (_is_transient_server_error(e) or _is_rate_limited(e)) and not model:
+                for fb in FALLBACK_MODELS:
+                    logger.warning(f"[llm] primary model failed, trying {fb}")
+                    try:
+                        return _call_llm(msgs, trim=trim, max_retries=1, allow_tools=allow_tools, model=fb)
+                    except Exception:
+                        continue
             raise
 
 
-def transcribe_with_model(audio_bytes, mime_type="audio/wav", translate=False):
+def transcribe_with_model(audio_bytes, mime_type="audio/wav", translate=False, model=None):
     if not MODEL:
         raise RuntimeError("MODEL is not set")
     if translate:
@@ -352,7 +378,7 @@ def transcribe_with_model(audio_bytes, mime_type="audio/wav", translate=False):
             "with no commentary. If there is no intelligible speech, return exactly: NO_SPEECH"
         )
     response = genai_client.models.generate_content(
-        model=MODEL,
+        model=model or MODEL,
         contents=[instruction, types.Part.from_bytes(data=audio_bytes, mime_type=mime_type)],
         config=types.GenerateContentConfig(
             automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True),
@@ -383,13 +409,16 @@ def transcribe_local(path, translate=False):
 
 
 def transcribe_bytes(audio_bytes, retries=3):
-    for attempt in range(retries):
-        try:
-            return transcribe_with_model(audio_bytes, "audio/wav", translate=True)
-        except Exception as e:
-            logger.warning(f"[transcribe] attempt { attempt+1} failed: {e}")
-            if attempt < retries-1:
-                time.sleep(2*(attempt+1))
+    for m in [MODEL] + FALLBACK_MODELS:
+        for attempt in range(retries):
+            try:
+                return transcribe_with_model(audio_bytes, "audio/wav", translate=True)
+            except Exception as e:
+                logger.warning(f"[transcribe] {m} attempt { attempt+1} failed: {e}")
+                if not (_is_transient_server_error(e) or _is_rate_limited(e)):
+                    break
+                if attempt < retries-1:
+                    time.sleep(1.5)
     
     with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
         tmp.write(audio_bytes)
@@ -543,8 +572,8 @@ def _build_normalized_export(records):
     return sheets
 
 
-def new_conversation():
-    return [{"role": "system", "content": build_system_prompt()}]
+def new_conversation(roles=None):
+    return [{"role": "system", "content": build_system_prompt(), "schema": _schema_text_for(_allowed_collections(roles)),}]
 
 
 def _compact_tool_result_for_context(result, max_items=10):
@@ -620,7 +649,7 @@ def run_tool_call(function_call, session_id="default", turn_id="", user= None, u
 
         elif name == "distinct_values":
             result = run_distinct_values(
-                SCHEMA_CATALOG, args["collection_name"], args["field_path"]
+                SCHEMA_CATALOG, args["collection_name"], args["field_path"], limit=200
             )
 
         elif name == "query_collection":
@@ -873,7 +902,10 @@ def run_tool_call(function_call, session_id="default", turn_id="", user= None, u
                 }
                 artifact = {"type": "excel", "path": filepath}
 
-
+        elif name == "create_powerbi_file":
+            from powerbi_export import create_powerbi_file
+            result, artifact= create_powerbi_file(args, label= args.get("label"))
+            
         elif name == "generate_chart":
             chart_result = generate_chart(
                 labels=args.get("labels", []),

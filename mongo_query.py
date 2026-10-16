@@ -97,7 +97,10 @@ def distinct_values(catalog, collection_name, field_path, limit=50):
 
     values = db[collection_name].distinct(field_path)
     values = [_json_safe(v) for v in values]
-    return {"field": field_path, "count": len(values), "values": values[:limit]}
+    result= {"field": field_path, "count": len(values), "values": values[:limit]}
+    if len(values)>limit:
+        result["note"]= f"Showing {limit} of {len(values)} distinct values; tell the user the list is partial."
+    return result
 
 
 def _get_nested(rec, dotted_key):

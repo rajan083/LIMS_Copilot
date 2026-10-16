@@ -19,6 +19,8 @@ from agent import new_conversation, handle_turn, transcribe_bytes, TOOL_ROLES
 from report_email import (
     get_pending_email, confirm_and_send, cancel_pending_email, clear_session, is_external,
 )
+from rag_pipeline import warm_up
+from powerbi_export import register_feed
 
 logger = logging.getLogger("lims.api")
 
@@ -37,6 +39,8 @@ MAX_AUDIO_BYTES= 5_000_000
 
 keystore.init()
 
+warm_up()
+
 app = FastAPI(
     title="LIMS Copilot API",
     version="1.0",
@@ -44,6 +48,8 @@ app = FastAPI(
     redoc_url=None,
     openapi_url="/openapi.json" if ENABLE_DOCS else None,
 )
+
+register_feed(app)
 
 # ---------------------------------------------------------------- state (in memory)
 _conversations = {}      # (user, conv_id) -> {"messages", "lock", "updated"}
@@ -138,12 +144,12 @@ def health():
 
 
 @app.post("/v1/conversations")
-def create_conversation(user: str = Depends(authenticate)):
+def create_conversation(user: str = Depends(authenticate), roles= Depends(get_roles)):
     _cleanup()
     conv_id = uuid.uuid4().hex
     with _store_lock:
         _conversations[(user, conv_id)] = {
-            "messages": new_conversation(),
+            "messages": new_conversation(roles),
             "lock": threading.Lock(),
             "updated": time.time(),
         }

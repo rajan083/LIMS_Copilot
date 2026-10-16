@@ -33,7 +33,7 @@ def build_schema_catalog(collection_names=None, sample_size=5):
 
     catalog = {}
     for name in collection_names:
-        sample_docs = list(db[name].find().limit(sample_size))
+        sample_docs = list(db[name].aggregate([{"$sample": {"size": 50}}]))
         if not sample_docs:
             continue
         fields = {}
