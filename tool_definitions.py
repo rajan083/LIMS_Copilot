@@ -535,6 +535,7 @@ tools = [
                 "Create a Power BI file (.pbids) that opens in Power BI Desktop with live data. "
                 "Use only when the user asks for Power BI or a dashboard. "
                 "kind='records' for row-level data, 'count' for counts per group, 'sum' for totals per group."
+                "For 'count' and 'sum', group_by is required; for totals over time pass the date field as group_by. "
             ),
             "parameters": {
                 "type": "object",
@@ -542,8 +543,16 @@ tools = [
                     "collection_name": {"type": "string"},
                     "kind": {"type": "string", "enum": ["records", "count", "sum"]},
                     "fields": {"type": "array", "items": {"type": "string"}},
-                    "group_by": {"type": "string"},
-                    "sum_fields": {"type": "array", "items": {"type": "string"}},
+                    "group_by": {
+                        "type": "string",
+                        "description": ("Required when kind is 'count' or 'sum': the field to group by. "
+                                        "For totals over time (per month, per day), pass the date field here "
+                                        "and set date_bucket."),
+                    },
+                    "sum_fields": {
+                        "type": "array", "items": {"type": "string"},
+                        "description": "Required when kind is 'sum'.",
+                    },                    
                     "filters": {"type": "object"},
                     "date_field": {"type": "string"},
                     "date_from": {"type": "string", "description": "YYYY-MM-DD"},
@@ -552,7 +561,7 @@ tools = [
                     "limit": {"type": "integer"},
                     "label": {"type": "string"},
                 },
-                "required": ["collection_name"],
+                "required": ["collection_name", "kind"],
             },
         },
     },

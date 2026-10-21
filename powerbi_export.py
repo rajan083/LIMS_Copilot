@@ -31,7 +31,7 @@ def verify_token(token):
         return payload['spec']
     except Exception:
         raise HTTPException(status_code=401, detail="Invalid or expired feed token")
-    
+
 def fetch_rows(spec):
     kind = spec.get("kind", "records")
     coll = spec["collection_name"]
