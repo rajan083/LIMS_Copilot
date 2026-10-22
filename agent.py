@@ -18,6 +18,7 @@ from report_email import (note_user_message, note_assistant_message, note_artifa
 from rag_pipeline import (search_documents as run_search_documents, get_cache_stats, learn_if_correction, _looks_like_correction, _pending_turns, _normalize_query)
 from answer_cache import lookup_cached_answer, store_cached_answer
 from multi_hop import  multi_hop_search as run_multi_hop_search
+from pdf_export import create_pdf
 from mongo_discovery import build_schema_catalog, get_shallow_summary, describe_field as describe_field_lookup
 from mongo_query import (query_collection as run_query_collection, distinct_values as run_distinct_values, MAX_RESULTS, first_or_last_by_field as run_first_or_last_by_field,
     analyze_parameter_durations as run_analyze_parameter_durations, count_by_field as run_count_by_field, sum_by_field as run_sum_by_field,)
@@ -55,9 +56,9 @@ _NEEDS_CONTEXT_RE = re.compile(
 )
 
 
-EXPORT_TOOLS = {"export_records_to_excel", "export_joined_records_to_excel", "export_summary_to_excel", "create_powerbi_file"}
+EXPORT_TOOLS = {"export_records_to_excel", "export_joined_records_to_excel", "export_summary_to_excel", "create_powerbi_file", "export_records_to_pdf"}
 
-EXPORT_WORDS = re.compile(r"\b(export\w*|excel|xlsx|spreadsheet|sheets?|csv|download\w*|power\s?bi|dashboard)\b", re.I)
+EXPORT_WORDS = re.compile(r"\b(export\w*|excel|xlsx|spreadsheet|sheets?|csv|download\w*|power\s?bi|dashboard|pdf|print\w*)\b", re.I)
 
 YES_WORDS = re.compile(r"^\s*(yes|yeah|yep|sure|ok|okay|please do|go ahead|do it)\b", re.I)
 
@@ -306,6 +307,10 @@ def _validate_completion(response):
         logger.warning(f"[llm] unusual finish_reason={finish_name}")
     return response
 
+def is_model_unavailable(e):
+    status= getattr(e, "code", None) or getattr(e, "status_code", None)
+    text= str(e).lower()
+    return status == 404 and ("not found" in text or "not_found" in text) 
 
 def _call_llm(msgs, trim=True, max_retries=3, allow_tools=True, model=None):
     payload = _trim_messages(msgs) if trim else msgs
@@ -353,7 +358,7 @@ def _call_llm(msgs, trim=True, max_retries=3, allow_tools=True, model=None):
                 attempt += 1
                 continue
 
-            if (_is_transient_server_error(e) or _is_rate_limited(e)) and not model:
+            if (_is_transient_server_error(e) or _is_rate_limited(e) or is_model_unavailable(e)) and not model:
                 for fb in FALLBACK_MODELS:
                     logger.warning(f"[llm] primary model failed, trying {fb}")
                     try:
@@ -828,6 +833,20 @@ def run_tool_call(function_call, session_id="default", turn_id="", user= None, u
                     filepath = export_excel_file(joined, label=label)
                     result = {"message": f"Exported {len(joined)} joined records to {filepath}"}
                     artifact = {"type": "excel", "path": filepath}
+        
+        elif name == "export_records_to_pdf":
+            args["limit"] = args.get("limit") or 300
+            records, err = _fetch_records(args)
+            if err:
+                result = {"error": err}
+            elif not records:
+                result = {"error": "No records matched, so no PDF was created."}
+            else:
+                columns = args.get("columns")
+                sheets = {"Data": _apply_columns(records, columns=columns)} if columns else _build_normalized_export(records)
+                filepath = create_pdf(args["title"], sheets, args.get("layout", "table"), args.get("label"))
+                result = {"message": f"PDF with {len(records)} record(s) saved to {filepath}"}
+                artifact = {"type": "pdf", "path": filepath}
 
         elif name == "analyze_parameter_durations":
             result = run_analyze_parameter_durations(

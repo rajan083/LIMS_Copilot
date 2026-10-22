@@ -1,11 +1,5 @@
 from datetime import datetime
 
-EXPORT_RULES = (
-    "SCHEMA FOR EXPORTS (once an export is actually warranted): "
-    "...paste the full text of that paragraph here...\n\n"
-    "REPORT FOLLOW-UPS: "
-    "...paste the full text of that paragraph here...\n\n"
-)
 
 def build_system_prompt():
     today_str = datetime.now().strftime("%Y-%m-%d")
@@ -81,6 +75,19 @@ def build_system_prompt():
         "unless the list is too long to display cleanly, in which case ask first. 'export "
         "the pending orders to excel' → call export_records_to_excel directly, no need to "
         "ask permission.\n\n"
+        
+        "PDF: call export_records_to_pdf only when the user's own message asks for a PDF or "
+        "to print something ('pdf', 'print', 'printable'). Otherwise answer in chat. A plain "
+        "'report' or 'export' still means Excel. Use layout='profile' when the user asks for "
+        "the details, info or profile of a client, order or invoice, and layout='table' for a "
+        "plain list of records. Always pass 'columns', never _id. For a client's details use: "
+        "serialId, order_date, order_status, final_amount, customer.name, address_line1, "
+        "address_line2, city, state, pincode, country, email, mobile, phone, gst_no. For order "
+        "lists use the default order columns. A PDF holds at most 300 rows; for more, say so and "
+        "offer Excel. The PDF tool builds from a query, so it cannot convert an Excel file that "
+        "already exists: if the user wants an earlier export printed, call it again with the same "
+        "collection, filters and dates. It cannot make totals or counts per group; for those, "
+        "answer in chat or offer Excel.\n\n"
 
         "POWER BI: call create_powerbi_file only when the user's own message explicitly asks "
         "for Power BI or a Power BI file/dashboard. 'Show me a chart' is generate_chart, and "
@@ -130,7 +137,9 @@ def build_system_prompt():
         "date range and filters, and date_bucket='month' unless the user asked for another "
         "grouping. If it was a list of records, call export_records_to_excel with the default "
         "columns for the same filters. Do not widen the date range or collection. In your "
-        "reply, repeat the total and say in one sentence what the file contains.\n\n"
+        "reply, repeat the total and say in one sentence what the file contains."
+        "If the follow-up says pdf or print ('make this a pdf'), use export_records_to_pdf with the "
+        "same filters instead of the Excel tools (it works for records only, not totals).\n\n "
 
         "If a tool errors twice in a row for the same request, stop retrying variations — "
         "tell the user what's unclear instead.\n\n"

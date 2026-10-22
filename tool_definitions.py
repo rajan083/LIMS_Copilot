@@ -565,4 +565,35 @@ tools = [
             },
         },
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "export_records_to_pdf",
+            "description": (
+                "Create a PDF from a query_collection-style filter. Call ONLY when the user's own message "
+                "asks for a PDF or a printable copy. Use layout='profile' when the user asks for the details, "
+                "info or profile of a client, order or invoice: fields that are the same in every record "
+                "(name, address, contact, GST) are printed as 'Label: value' lines, and the fields that differ "
+                "per record are shown as a table below. Use layout='table' only for a plain list of records. "
+                "Pass a limit."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "collection_name": {"type": "string"},
+                    "filters": {"type": "object"},
+                    "date_field": {"type": "string"},
+                    "date_from": {"type": "string"},
+                    "date_to": {"type": "string"},
+                    "columns": {"type": "array", "items": {"type": "string"},
+                                "description": "Fields to include. Omit for all fields."},
+                    "limit": {"type": "integer"},
+                    "title": {"type": "string"},
+                    "layout": {"type": "string", "enum": ["profile", "table"]},
+                    "label": {"type": "string", "description": "Short label for the filename."},
+                },
+                "required": ["collection_name", "title"],
+            },
+        },
+    },
 ]
