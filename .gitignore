@@ -21,10 +21,12 @@ documents/learned/
 
 # Generated output (can contain client data)
 exports/
-charts/
 *.xlsx
 *.csv
-
+*.pdf
+*.pbids
+*.html
+*.png
 # Source documents: internal, supply separately (keeps empty folders via .gitkeep)
 documents/manuals/*
 documents/schema/*

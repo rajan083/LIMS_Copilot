@@ -575,7 +575,9 @@ tools = [
                 "info or profile of a client, order or invoice: fields that are the same in every record "
                 "(name, address, contact, GST) are printed as 'Label: value' lines, and the fields that differ "
                 "per record are shown as a table below. Use layout='table' only for a plain list of records. "
-                "Pass a limit."
+                "Pass a limit. Use layout='cards' when the user wants a list of clients with their details as text, "
+                "not a table: one block per record, the first column is the heading. Records come from orders, "
+                "so the same client repeats; set dedupe=true for a unique client list. "
             ),
             "parameters": {
                 "type": "object",
@@ -589,10 +591,33 @@ tools = [
                                 "description": "Fields to include. Omit for all fields."},
                     "limit": {"type": "integer"},
                     "title": {"type": "string"},
-                    "layout": {"type": "string", "enum": ["profile", "table"]},
+                    "layout": {"type": "string", "enum": ["profile", "table", "cards"]},
+                    "dedupe": {"type": "boolean", "description": "Remove repeated rows. Use true for a list of unique clients."},
                     "label": {"type": "string", "description": "Short label for the filename."},
                 },
                 "required": ["collection_name", "title"],
+            },
+        },
+    },
+    {
+    "type": "function",
+        "function": {
+            "name": "export_text_to_pdf",
+            "description": (
+                "Create a PDF from text that is already in the conversation, such as a definition or "
+                "an explanation from the manual. Call ONLY when the user's own message asks for a PDF "
+                "of that text. Do not use it for database records; use export_records_to_pdf for those. "
+                "Format the text simply: start a heading line with '## ', start list items with '- ', and use **bold** for key terms. "
+                "For a definition, write a one-line summary first, then short sections or bullets. No tables."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "title": {"type": "string"},
+                    "text": {"type": "string", "description": "The full text to put in the PDF."},
+                    "label": {"type": "string", "description": "Short file name prefix."},
+                },
+                "required": ["title", "text"],
             },
         },
     },

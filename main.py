@@ -2,7 +2,7 @@ import os, time
 import numpy as np
 from scipy.io import wavfile
 import sounddevice as sd
-from report_email import get_pending_email, confirm_and_send, cancel_pending_email
+from email_report import get_pending_email, confirm_and_send, cancel_pending_email
 from agent import new_conversation, handle_turn, transcribe_with_model, transcribe_local
 from rag_pipeline import ingest_documents, save_learned_answer
 

@@ -1,7 +1,7 @@
 import streamlit as st
 import os, re, uuid, time, tempfile
 from agent import new_conversation, handle_turn, transcribe_with_model, transcribe_local
-from report_email import get_pending_email, confirm_and_send, cancel_pending_email, is_external
+from email_report import get_pending_email, confirm_and_send, cancel_pending_email, is_external
 
 st.set_page_config(page_title="LIMS Copilot", layout="wide")
 

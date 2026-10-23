@@ -3,7 +3,7 @@ from datetime import datetime
 import plotly.graph_objects as go
 
 
-CHARTS_DIR = "charts"
+CHARTS_DIR = "exports"
 
 VALID_CHART_TYPES = {
     "bar", "horizontal_bar", "stacked_bar",

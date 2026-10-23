@@ -11,14 +11,14 @@ from google.genai import types
 from functools import lru_cache
 
 from system_prompt import build_system_prompt
-from excel_export import export_excel_file, export_excel_file_multi_sheet
-from chart_export import generate_chart
+from export_excel import export_excel_file, export_excel_file_multi_sheet
+from export_chart import generate_chart
 from tool_definitions import tools
-from report_email import (note_user_message, note_assistant_message, note_artifact, prepare_report_email)
+from email_report import (note_user_message, note_assistant_message, note_artifact, prepare_report_email)
 from rag_pipeline import (search_documents as run_search_documents, get_cache_stats, learn_if_correction, _looks_like_correction, _pending_turns, _normalize_query)
 from answer_cache import lookup_cached_answer, store_cached_answer
 from multi_hop import  multi_hop_search as run_multi_hop_search
-from pdf_export import create_pdf
+from export_pdf import create_pdf, create_text_pdf
 from mongo_discovery import build_schema_catalog, get_shallow_summary, describe_field as describe_field_lookup
 from mongo_query import (query_collection as run_query_collection, distinct_values as run_distinct_values, MAX_RESULTS, first_or_last_by_field as run_first_or_last_by_field,
     analyze_parameter_durations as run_analyze_parameter_durations, count_by_field as run_count_by_field, sum_by_field as run_sum_by_field,)
@@ -56,7 +56,7 @@ _NEEDS_CONTEXT_RE = re.compile(
 )
 
 
-EXPORT_TOOLS = {"export_records_to_excel", "export_joined_records_to_excel", "export_summary_to_excel", "create_powerbi_file", "export_records_to_pdf"}
+EXPORT_TOOLS = {"export_records_to_excel", "export_joined_records_to_excel", "export_summary_to_excel", "create_powerbi_file", "export_records_to_pdf", "export_text_to_pdf"}
 
 EXPORT_WORDS = re.compile(r"\b(export\w*|excel|xlsx|spreadsheet|sheets?|csv|download\w*|power\s?bi|dashboard|pdf|print\w*)\b", re.I)
 
@@ -91,12 +91,15 @@ def _schema_text_for(names):
     return json.dumps(get_shallow_summary(_catalog_for(names)), default=str)
 
 
-def _export_allowed(user_text, prev_model_text=""):
-    text = user_text or ""
-    if EXPORT_WORDS.search(text):
-        return True
-    return bool(YES_WORDS.search(text) and re.search(r"\b(export\w*|excel|file|spreadsheet|report)\b", prev_model_text or "", re.I))
+def _user_texts(msgs):
+    return ["".join(p.text for p in (m.parts or []) if getattr(p, "text", None))
+            for m in msgs if _is_user_turn_start(m)]
 
+def _export_allowed(msgs):
+    texts = _user_texts(msgs)[-2:]          # this message and the one before it
+    if not texts:
+        return False
+    return bool(EXPORT_WORDS.search(" ".join(texts)) or YES_WORDS.search(texts[-1]))
 
 _HOWTO_RE= re.compile(
     r"\b(how (do|can|to|should)|where (do|can|is)|manual|screen|button|menu|navigate)\b",
@@ -326,7 +329,7 @@ def _call_llm(msgs, trim=True, max_retries=3, allow_tools=True, model=None):
         system_text += ("\n\nCollections and their top-level fields (already loaded, so do not call list_collections):\n" + schema)    
     config_kwargs = dict(
         system_instruction=system_text,
-        tools=GEMINI_TOOLS if _export_allowed(user_said) else GEMINI_TOOLS_NO_EXPORT,
+        tools=GEMINI_TOOLS if _export_allowed(msgs) else GEMINI_TOOLS_NO_EXPORT,
         max_output_tokens=4096,
         automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True),
     )
@@ -619,7 +622,7 @@ def _compact_tool_result_for_context(result, max_items=10):
 
     return compacted
 
-def run_tool_call(function_call, session_id="default", turn_id="", user= None, user_text="", roles=None):
+def run_tool_call(function_call, session_id="default", turn_id="", user= None, export_ok= False, roles=None):
     name = function_call.name
     artifact = None
     tag = f"[{session_id}|{turn_id}]"
@@ -641,7 +644,7 @@ def run_tool_call(function_call, session_id="default", turn_id="", user= None, u
         
         elif blocked:
             result= {"error": f"Access denied: this user's role cannot use {', '.join(blocked)}. Tell the user they do not have permission for that data and do not try another way to get it."}        
-        elif name in EXPORT_TOOLS and not _export_allowed(user_text):
+        elif name in EXPORT_TOOLS and not export_ok:
             result = {"error": "The user did not ask for a file. Do not export. Show the data in chat, or ask whether they want it exported and wait for their answer."}
 
         elif name == "list_collections":
@@ -843,10 +846,20 @@ def run_tool_call(function_call, session_id="default", turn_id="", user= None, u
                 result = {"error": "No records matched, so no PDF was created."}
             else:
                 columns = args.get("columns")
-                sheets = {"Data": _apply_columns(records, columns=columns)} if columns else _build_normalized_export(records)
+                sheets = ({"Data": _apply_columns(records, columns=columns, dedupe=args.get("dedupe", False))} if columns else _build_normalized_export(records))
                 filepath = create_pdf(args["title"], sheets, args.get("layout", "table"), args.get("label"))
-                result = {"message": f"PDF with {len(records)} record(s) saved to {filepath}"}
+                n = len(next(iter(sheets.values())))
+                result = {"message": f"PDF with {n} record(s) saved to {filepath}"}                
                 artifact = {"type": "pdf", "path": filepath}
+        
+        elif name == "export_text_to_pdf":
+            title, text= args.get("title"), args.get("text")
+            if not title or not text:
+                result= {"error": "title and text are required."}
+            else:
+                filepath= create_text_pdf(title, text, args.get("label"))
+                result= {"message": f"PDF saved to {filepath}"}
+                artifact= {"type": "pdf", "path": filepath}
 
         elif name == "analyze_parameter_durations":
             result = run_analyze_parameter_durations(
@@ -922,7 +935,7 @@ def run_tool_call(function_call, session_id="default", turn_id="", user= None, u
                 artifact = {"type": "excel", "path": filepath}
 
         elif name == "create_powerbi_file":
-            from powerbi_export import create_powerbi_file
+            from export_powerbi import create_powerbi_file
             result, artifact= create_powerbi_file(args, label= args.get("label"))
             
         elif name == "generate_chart":
@@ -1028,10 +1041,10 @@ def handle_turn(messages, content, session_id="default", user= None, roles= None
     
     prev = _pending_turns.get(session_id)
     is_repeat = bool(prev) and _normalize_query(prev["question"]) == _normalize_query(content)
-    use_cache = (not is_repeat) and in_standalone_question(content) and "@" not in content
+    use_cache = (not is_repeat) and in_standalone_question(content) and "@" not in content and not EXPORT_WORDS.search(content)
 
     if not use_cache:
-        reason = "repeat of the previous question" if is_repeat else "not a standalone question"
+        reason = "repeat of the previous question" if is_repeat else "export request" if EXPORT_WORDS.search(content) else "not a standalone question"
         logger.info(f"[{session_id}|{turn_id}] [answer_cache] SKIPPED ({reason})")
 
     if use_cache:
@@ -1053,6 +1066,7 @@ def handle_turn(messages, content, session_id="default", user= None, roles= None
             return cached_reply, messages, []
 
     messages.append(_user_text(content))
+    export_ok = _export_allowed(messages)
     artifacts = []
     tools_used = set()
     used_fallback = False
@@ -1084,7 +1098,7 @@ def handle_turn(messages, content, session_id="default", user= None, roles= None
         
         for fc in function_calls:
             tools_used.add(fc.name)
-            result, artifact = run_tool_call(fc, session_id=session_id, turn_id=turn_id, user=user, user_text=content, roles=roles)
+            result, artifact = run_tool_call(fc, session_id=session_id, turn_id=turn_id, user=user, export_ok=export_ok, roles=roles)
             if artifact:
                 artifacts.append(artifact)
                 note_artifact(session_id, artifact["path"])
@@ -1206,6 +1220,7 @@ def handle_turn(messages, content, session_id="default", user= None, roles= None
         and in_standalone_question(content)
         and not used_fallback
         and not artifacts
+        and not EXPORT_WORDS.search(content)
         and tools_used & {"search_documents", "multi_hop_search"}
         and tools_used <= ANSWER_CACHEABLE_TOOLS
     ):

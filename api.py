@@ -16,11 +16,11 @@ from pydantic import BaseModel, Field
 
 import keystore
 from agent import new_conversation, handle_turn, transcribe_bytes, TOOL_ROLES
-from report_email import (
+from email_report import (
     get_pending_email, confirm_and_send, cancel_pending_email, clear_session, is_external,
 )
 from rag_pipeline import warm_up
-from powerbi_export import register_feed
+from export_powerbi import register_feed
 
 logger = logging.getLogger("lims.api")
 
