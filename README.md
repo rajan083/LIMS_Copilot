@@ -15,7 +15,8 @@ It can be used in three ways:
 | Answer questions from LIMS data | The model calls read-only query tools over MongoDB (list, filter, count, sum, first/last, parameter durations) |
 | Answer "how do I..." questions | Semantic search over the manuals and procedure documents (RAG), plus multi-hop search for questions that need several lookups |
 | Export to Excel | Single-sheet, multi-sheet, joined and summary exports; nested records are split into linked sheets |
-| Export to PDF | Table or profile layout (ReportLab), limited to 300 rows |
+| Export to PDF | Three layouts: `table`, `profile` (one client, order or invoice) and `cards` (one text block per record, no table). Optional de-duplication for unique lists. Limited to 300 rows (ReportLab) |
+| PDF from chat text | A definition or explanation already in the chat (for example from the manual) can be turned into a formatted PDF with headings, bullets and bold text |
 | Charts | bar, horizontal bar, stacked bar, line, area, pie, donut, scatter, histogram. PNG (works offline) or interactive HTML |
 | Power BI | Creates a `.pbids` file that points to a signed, expiring CSV feed. Power BI refreshes from live data |
 | Email a report | The user asks, the Copilot prepares the email, and nothing is sent until the user clicks **Send** |
@@ -39,7 +40,7 @@ Gemini model  ←→  Tools
    ↓
 Reply + generated files + pending email (if any)
    ↓
-User confirms the email → report_email.confirm_and_send
+User confirms the email → email_report.confirm_and_send
 ```
 
 Data access is read-only and limited to the collections listed in `ALLOWED_COLLECTIONS` in `agent.py` (`el_orders`, `el_order_test_parameter`, `app_invoice`).
@@ -74,20 +75,21 @@ handle_turn(messages, text, session_id, user, roles)
  ├─ 1. note_user_message()                       (kept for the email feature)
  ├─ 2. Fresh chat + text that needs earlier context
  │       → ask the user to clarify, stop
- ├─ 3. Answer cache (standalone, non-repeated questions only)
+ ├─ 3. Answer cache (standalone, non-repeated, non-export questions only)
  │       lookup_cached_answer(): embed question → Chroma cache query
  │       similarity above threshold and not expired → return, no model call
  ├─ 4. _call_llm(messages)
  │       trim to the last 3 turns, replace old document-search results with a stub,
  │       add the schema to the system text (skipped for "how do I..." questions),
- │       offer export tools only if the message asks for a file,
+ │       offer export tools only if this or the previous message asks for a file,
  │       generate_content with automatic function calling disabled,
  │       retry on rate limit / server errors, then try FALLBACK_MODELS
  ├─ 5. Tool loop (maximum 12 rounds)
  │       for each function call the model returns:
  │         run_tool_call()
  │           a. role checks: TOOL_ROLES and COLLECTION_ROLES → "Access denied"
- │           b. export gate: the user must have asked for a file
+ │           b. export gate (export_ok, worked out once per turn): this or the previous
+│              user message mentions a file or export word, or this one is a short "yes"
  │           c. dispatch to the tool (table below)
  │         the result goes back to the model, then _call_llm() runs again
  │       • prepare_report_email returns "awaiting_user_confirmation"
@@ -95,7 +97,7 @@ handle_turn(messages, text, session_id, user, roles)
  │       • 12 rounds reached → one last call with tools disabled
  ├─ 6. Empty reply → up to 2 retries, then a fallback message
  ├─ 7. store_cached_answer(), only if the turn used only document search,
- │       created no files, and started a fresh conversation
+ │       created no files, was not an export request, and started a fresh conversation
  └─ 8. note_assistant_message(), learn_if_correction()
 ```
 
@@ -107,13 +109,14 @@ handle_turn(messages, text, session_id, user, roles)
 | Tool | Internal path |
 |---|---|
 | `list_collections`, `describe_field`, `distinct_values`, `query_collection`, `count_by_field`, `sum_by_field`, `first_or_last_by_field`, `analyze_parameter_durations` | `mongo_query.*` → `db.py` (read-only MongoDB) |
-| `export_records_to_excel`, `export_joined_records_to_excel`, `export_summary_to_excel` | `_fetch_records` → `mongo_query` → `_build_normalized_export` / `_apply_columns` → `excel_export` → `.xlsx` artifact |
-| `export_records_to_pdf` | `_fetch_records` → `create_pdf` (`pdf_export.py`) → `.pdf` artifact |
-| `generate_chart` | `chart_export.generate_chart` → PNG or HTML artifact |
+| `export_records_to_excel`, `export_joined_records_to_excel`, `export_summary_to_excel` | `_fetch_records` → `mongo_query` → `_build_normalized_export` / `_apply_columns` → `export_excel` → `.xlsx` artifact |
+| `export_records_to_pdf` | `_fetch_records` → `_apply_columns` (with `dedupe`) or `_build_normalized_export` → `create_pdf` (`export_pdf.py`) → `.pdf` artifact |
+| `export_text_to_pdf` | `create_text_pdf` (`export_pdf.py`) → `.pdf` artifact. Takes a title and text from the chat, not database records |
+| `generate_chart` | `export_chart.generate_chart` → PNG or HTML artifact |
 | `create_powerbi_file` | `sign_spec()` → `.pbids` artifact pointing to `/powerbi/feed.csv?t=<token>`. When Power BI refreshes, `verify_token()` → `fetch_rows()` → `rows_to_csv()` |
 | `search_documents` | `rag_pipeline.search_documents` → search cache. On a miss: embed the query → Chroma query → relevance filter → `_fetch_related` (linked documents) |
 | `multi_hop_search` | `_decompose` (model) → `_retrieve` → `_find_gaps` (model) → `_retrieve` → merged, ranked chunks |
-| `prepare_report_email` | `report_email`: resolve the recipient, validate attachments, store a pending email |
+| `prepare_report_email` | `email_report`: resolve the recipient, validate attachments, store a pending email |
 | `cache_stats` | `get_cache_stats` (admin only) |
 
 ### 5. Other API calls in the same flow
@@ -142,9 +145,9 @@ handle_turn(messages, text, session_id, user, roles)
 | `answer_cache.py` | Answer cache lookup and storage |
 | `manual_qa.py` | Turns manual PDFs in `manual_sources/` into per-page documents in `documents/manuals/` using the model |
 | `schema_docs.py` | Generates schema documents for the allowed collections |
-| `excel_export.py`, `pdf_export.py`, `chart_export.py` | Excel, PDF and chart generation |
-| `powerbi_export.py` | Signed Power BI feed and `.pbids` file creation |
-| `report_email.py` | Contact lookup, email preparation, sending, audit log |
+| `export_excel.py`, `export_pdf.py`, `export_chart.py` | Excel, PDF (table, profile and cards layouts, and text PDFs) and chart generation |
+| `export_powerbi.py` | Signed Power BI feed and `.pbids` file creation |
+| `email_report.py` | Contact lookup, email preparation, sending, audit log |
 | `keystore.py` | API key creation, hashing, verification and revocation |
 | `documents/`, `manual_sources/` | Source manuals and schema notes (not in Git) |
 | `vector_store/`, `cache/` | Generated search index and caches (not in Git) |
@@ -160,6 +163,10 @@ python -m venv .venv
 # source .venv/bin/activate       # macOS / Linux
 pip install -r requirements.txt
 ```
+
+`reportlab` is needed for PDF export. If it is not in your `requirements.txt`, run `pip install reportlab`.
+
+Optional: to print symbols such as the rupee sign in PDFs, put `DejaVuSans.ttf` and `DejaVuSans-Bold.ttf` in a `fonts/` folder next to `export_pdf.py`. Without them the PDFs use Helvetica.
 
 Create a `.env` file in the project folder:
 
@@ -181,7 +188,7 @@ Create a `.env` file in the project folder:
 
 Never commit `.env`.
 
-Note: `api.py` imports `powerbi_export`, which reads `POWERBI_FEED_BASE_URL` at import time, so the API will not start without it.
+Note: `api.py` imports `export_powerbi`, which reads `POWERBI_FEED_BASE_URL` at import time, so the API will not start without it.
 
 ### Build the document index
 
@@ -275,7 +282,7 @@ The calling application decides who the user is and sends their roles. The Copil
 
 | Action | Roles allowed |
 |---|---|
-| Excel, PDF and Power BI exports | `accounts`, `lab`, `admin` |
+| Excel, PDF (records and text) and Power BI exports | `accounts`, `lab`, `admin` |
 | Prepare and send report email | `accounts`, `admin` |
 | Cache statistics | `admin` |
 
@@ -286,11 +293,31 @@ A user without the right role gets an "Access denied" result, and the model is t
 1. The user generates a report (Excel, PDF or chart) and asks to email it.
 2. The recipient can be:
    - an email address the user typed in the chat, or
-   - a name, looked up in the contact collections listed in `CONTACT_SOURCES` in `report_email.py`.
+   - a name, looked up in the contact collections listed in `CONTACT_SOURCES` in `email_report.py`.
 3. The Copilot prepares the email and shows a confirmation with the address, file, subject and message.
 4. Nothing is sent until the user confirms. Each send is written to `email_audit.jsonl`, and there is a limit of 10 emails per user per hour.
 
 Rules built into the code: only files generated in the current conversation can be attached, and the model cannot send to an address the user did not type or that was not found in the contacts.
+
+## PDF output
+
+Two tools create PDFs, both with a coloured title block, the generation time, and page numbers on every page.
+
+**`export_records_to_pdf`** builds a PDF from a database query. Pick the layout by what you ask for:
+
+| Layout | Use it for | Page |
+|---|---|---|
+| `table` | A plain list of records | Landscape |
+| `profile` | The details of ONE client, order or invoice. Fields that are the same in every record are printed as `Label: value` lines, the rest go in a table | Portrait |
+| `cards` | Details of several records as text, not a table. One block per record, the first column is the heading, and empty values (`0`, `NA`) are hidden | Portrait |
+
+Set `dedupe` to true for a unique list. Client details come from order records, so without it each client appears once per order. Rows are only removed when every selected column is identical.
+
+Examples: "give me all the details of all the clients in a pdf as text, not a table" uses `cards` with `dedupe`.
+
+**`export_text_to_pdf`** turns text that is already in the chat into a formatted PDF. The model can use `## Heading`, `- bullet` lines and `**bold**`. Example: "give me the definition of app resource list in a pdf".
+
+If a PDF tool call fails, the model is told not to switch layouts on its own, but to say what failed and ask.
 
 ## Power BI
 
@@ -319,6 +346,7 @@ Anyone who has the link can read that data until it expires, so treat `.pbids` f
 - Defaulting to no access when roles are missing.
 - Scheduled and automatic report sending.
 - Streaming responses.
+- A unique client list is built from order records, so near-duplicates stay separate (for example the same client with a different name suffix, or `NA`, `na` and `zzs` as the GST value). Reading from a clients collection, or cleaning those entries, would give a more exact list.
 
 ## Troubleshooting
 
@@ -329,4 +357,7 @@ Anyone who has the link can read that data until it expires, so treat `.pbids` f
 - **"Access denied" for a user:** check the roles sent in `X-User-Roles` against the tables above.
 - **API returns 401:** the key is wrong, expired or revoked.
 - **API returns 409:** the previous message in that conversation is still being processed.
+- **PDF export fails with `ModuleNotFoundError: reportlab`:** run `pip install reportlab` and add it to `requirements.txt`.
+- **A PDF shows a table when you wanted text:** ask for it "as text, not a table". The model then uses the `cards` layout.
+- **Symbols like the rupee sign show as boxes in a PDF:** add the DejaVu fonts to a `fonts/` folder (see Setup).
 - **Voice transcription is slow:** the Gemini call failed and the local Whisper model is being used.
