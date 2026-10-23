@@ -1,13 +1,12 @@
-import re
-import time
-import hashlib
-import logging
+import re, time, hashlib, logging, difflib
 import rag_pipeline as rp   # reuses its Chroma client and embedding model
 
 
 ANSWER_CACHE_NAME = "answer_cache"
 DEFAULT_THRESHOLD = 0.70        # cosine similarity needed for a hit; keep high
 DEFAULT_TTL_SECONDS = 86400     # 1 day
+GRAY_ZONE = 0.50      # embedding similarity floor for the typo check
+TYPO_RATIO = 0.93     # character similarity needed inside that zone
 
 _collection = None
 
@@ -44,27 +43,34 @@ def _question_id(question):
 def lookup_cached_answer(question, threshold=DEFAULT_THRESHOLD, ttl=DEFAULT_TTL_SECONDS):
     cache = _get_cache_collection()
     if cache.count() == 0:
-        logger.info(f'[answer_cache] MISS (cache is empty)')
+        logger.info('[answer_cache] MISS (cache is empty)')
         return None
 
-    emb = rp._get_model().encode([question], normalize_embeddings=True).tolist()
-    res = cache.query(query_embeddings=emb, n_results=1)
+    clean_q = _clean(question)                                   # same cleaning as store_cached_answer
+    emb = rp._get_model().encode([clean_q], normalize_embeddings=True).tolist()
+    res = cache.query(query_embeddings=emb, n_results=min(3, cache.count()))
     if not res["ids"] or not res["ids"][0]:
         return None
 
-    score = round(1 - res["distances"][0][0], 4)
-    meta = res["metadatas"][0][0]
-    age = time.time() - meta["created_at"]
-    matched = meta.get("question")
+    best = None
+    for i in range(len(res["ids"][0])):
+        meta = res["metadatas"][0][i]
+        if time.time() - meta["created_at"] >= ttl:
+            continue
+        score = round(1 - res["distances"][0][i], 4)
+        ratio = difflib.SequenceMatcher(None, clean_q, _clean(meta.get("question", ""))).ratio()
+        if score >= threshold or (score >= GRAY_ZONE and ratio >= TYPO_RATIO):
+            if best is None or score > best[0]:
+                best = (score, ratio, meta.get("question"), res["documents"][0][i])
 
-    if score >= threshold and age < ttl:
-        logger.info(f"[answer_cache] HIT sim={score} asked={question!r} matched={matched!r}")
-        return res["documents"][0][0]
+    if best:
+        logger.info(f"[answer_cache] HIT sim={best[0]} text_ratio={best[1]:.2f} asked={question!r} matched={best[2]!r}")
+        return best[3]
 
-    logger.info(f"[answer_cache] MISS nearest_sim={score} threshold={threshold} "
-                f"expired={age >= ttl} asked={question!r} nearest={matched!r}")
+    top_score = round(1 - res["distances"][0][0], 4)
+    logger.info(f"[answer_cache] MISS nearest_sim={top_score} threshold={threshold} "
+                f"asked={question!r} nearest={res['metadatas'][0][0].get('question')!r}")
     return None
-
 
 def store_cached_answer(question, answer):
     cache = _get_cache_collection()
