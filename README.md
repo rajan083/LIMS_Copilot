@@ -22,7 +22,7 @@ It can be used in three ways:
 | Email a report | The user asks, the Copilot prepares the email, and nothing is sent until the user clicks **Send** |
 | Voice input | Audio is transcribed (and translated to English) by Gemini, with a local Whisper fallback |
 | Role-based access | The calling application passes the user's roles; collections, exports and email are restricted by role |
-| Answer cache | Standalone questions with a close match to an earlier question are answered from the cache, which saves model calls |
+| Answer cache | Standalone questions are answered from a cache when an earlier question means the same thing, even if worded differently. Small typos also match when the text is almost identical. A cache hit skips the model call completely |
 | Learning from corrections | When the user corrects an answer, the correction is stored and used later |
 
 ## How it works
@@ -76,12 +76,15 @@ handle_turn(messages, text, session_id, user, roles)
  ├─ 2. Fresh chat + text that needs earlier context
  │       → ask the user to clarify, stop
  ├─ 3. Answer cache (standalone, non-repeated, non-export questions only)
- │       lookup_cached_answer(): embed question → Chroma cache query
- │       similarity above threshold and not expired → return, no model call
+ │       lookup_cached_answer(): drop filler words → embed → Chroma query (top 3)
+ │       hit if similarity ≥ threshold, or ≥ 0.50 and the text is ≥ 93% identical
+ │       (typos); expired entries are skipped → return, no model call
  ├─ 4. _call_llm(messages)
- │       trim to the last 3 turns, replace old document-search results with a stub,
+ │       trim to the last 3 turns, replace old results of document search,
+ │       describe_field and list_collections with a stub,
  │       add the schema to the system text (skipped for "how do I..." questions),
- │       offer export tools only if this or the previous message asks for a file,
+ │       offer only the document tools for "how do I..." questions; otherwise offer
+ │       export tools only if this or the previous message asks for a file,
  │       generate_content with automatic function calling disabled,
  │       retry on rate limit / server errors, then try FALLBACK_MODELS
  ├─ 5. Tool loop (maximum 12 rounds)
@@ -164,7 +167,7 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
-`reportlab` is needed for PDF export. If it is not in your `requirements.txt`, run `pip install reportlab`.
+PDF export uses `reportlab` and PNG charts use `kaleido`; both are listed in `requirements.txt`.
 
 Optional: to print symbols such as the rupee sign in PDFs, put `DejaVuSans.ttf` and `DejaVuSans-Bold.ttf` in a `fonts/` folder next to `export_pdf.py`. Without them the PDFs use Helvetica.
 
@@ -327,6 +330,28 @@ If a PDF tool call fails, the model is told not to switch layouts on its own, bu
 
 Anyone who has the link can read that data until it expires, so treat `.pbids` files like the data itself.
 
+## Logging and token usage
+
+Everything is logged to `lims_copilot.log` (UTF-8) and the terminal:
+
+- `[tokens]` lines: input and output tokens for every model call, and a `TURN TOTAL` per message.
+- `[tool_call]` and `[tool_result]` lines: which tool was called, with which arguments, and what came back.
+- `[answer_cache]` lines: `HIT` (with similarity and text ratio), `MISS` (with the nearest question), `STORED` or `SKIPPED` and why.
+- `[multi_hop] tokens` lines: the extra model calls inside multi-hop search. These are **not** included in `TURN TOTAL`.
+
+The log contains the questions users type and the data returned, so keep it private. `*.log` is in `.gitignore`, so it is not committed.
+
+**Where the tokens go.** Each model call resends the system prompt, the schema and the tool definitions, so that fixed part is most of the cost of a request. To keep it down:
+
+- "How do I..." questions get only the document tools, and no database schema.
+- Export tools are offered only when the user asks for a file.
+- Old results of document search, `describe_field` and `list_collections` are replaced by a short note in later turns.
+- The `describe_field` result leaves out bookkeeping fields (`allSelected`, `select`, `selected`, `version`).
+- Only the last 3 turns are sent.
+- Cached answers skip the model entirely.
+
+Multi-hop search makes two extra model calls, so it costs more than a plain document search. Its tool description tells the model to use it only when the answer needs information from more than one place, and to use plain document search for single-fact lookups.
+
 ## Security notes
 
 - Database access is read-only, and only the listed collections are exposed to the model.
@@ -357,7 +382,7 @@ Anyone who has the link can read that data until it expires, so treat `.pbids` f
 - **"Access denied" for a user:** check the roles sent in `X-User-Roles` against the tables above.
 - **API returns 401:** the key is wrong, expired or revoked.
 - **API returns 409:** the previous message in that conversation is still being processed.
-- **PDF export fails with `ModuleNotFoundError: reportlab`:** run `pip install reportlab` and add it to `requirements.txt`.
+- **PDF export fails with `ModuleNotFoundError: reportlab`:** run `pip install -r requirements.txt` again.
 - **A PDF shows a table when you wanted text:** ask for it "as text, not a table". The model then uses the `cards` layout.
 - **Symbols like the rupee sign show as boxes in a PDF:** add the DejaVu fonts to a `fonts/` folder (see Setup).
 - **Voice transcription is slow:** the Gemini call failed and the local Whisper model is being used.

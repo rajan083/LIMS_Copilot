@@ -26,7 +26,7 @@ EMBEDDING_MODEL = "all-MiniLM-L6-v2"       #before changing the embedding model 
 # Bump this whenever the ingest format changes (chunking, metadata, frontmatter
 # handling). It is folded into every file hash, so all files are re-ingested
 # automatically on the next run, with no need to delete manifest.json by hand.
-INGEST_VERSION = "okf-4"        #chaging the version here will reingest the documents again, without the need to delete the previous files, so with every change in pipeline embeddings, update the version, so the hash changes.
+INGEST_VERSION = "okf-5"        #chaging the version here will reingest the documents again, without the need to delete the previous files, so with every change in pipeline embeddings, update the version, so the hash changes.
 
 # Semantic chunking tuning
 BREAKPOINT_PERCENTILE = 90   # higher = fewer, larger chunks; lower = more, smaller chunks
