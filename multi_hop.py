@@ -36,6 +36,8 @@ def _ask_json_list(prompt):
                 temperature=0,
             ),
         )
+        u = resp.usage_metadata
+        logger.info(f"[multi_hop] tokens input={u.prompt_token_count} output={u.candidates_token_count}")
         data = json.loads(resp.text)
         if isinstance(data, list):
             return [q.strip() for q in data if isinstance(q, str) and q.strip()]

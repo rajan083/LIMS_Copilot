@@ -123,7 +123,7 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
     handlers=[
-        logging.FileHandler("lims_copilot.log"),   # persists to disk
+        logging.FileHandler("lims_copilot.log", encoding="utf-8"),   # persists to disk
         logging.StreamHandler(),                    # still shows in terminal
     ],
 )
@@ -142,10 +142,6 @@ def _to_gemini_tools(openai_tools):
             )
         )
     return [types.Tool(function_declarations=declarations)]
-
-
-GEMINI_TOOLS = _to_gemini_tools(tools)
-GEMINI_TOOLS_NO_EXPORT= _to_gemini_tools([t for t in tools if t['function']['name'] not in EXPORT_TOOLS])
 
 
 def _user_text(text):
@@ -241,10 +237,12 @@ def _trim_messages(msgs, keep_last_turns=3):
     return [system_msg] + msgs[cutoff:]
 
 
-DOC_TOOLS = {"search_documents", "multi_hop_search"}
-_STUB = {"note": "Earlier document-search results were removed. If the new question "
-                 "needs details from the documents, search again."}
+DOC_TOOLS = {"search_documents", "multi_hop_search", "describe_field", "list_collections"}
+_STUB = {"note": "Earlier results of this tool were removed. Call it again if needed"}
 
+GEMINI_TOOLS = _to_gemini_tools(tools)
+GEMINI_TOOLS_NO_EXPORT= _to_gemini_tools([t for t in tools if t['function']['name'] not in EXPORT_TOOLS])
+GEMINI_TOOLS_DOCS = _to_gemini_tools([t for t in tools if t['function']['name'] in DOC_TOOLS])
 
 def _stub_old_doc_results(msgs):
     """Replace document-search results from PREVIOUS turns with a stub.
@@ -329,7 +327,7 @@ def _call_llm(msgs, trim=True, max_retries=3, allow_tools=True, model=None):
         system_text += ("\n\nCollections and their top-level fields (already loaded, so do not call list_collections):\n" + schema)    
     config_kwargs = dict(
         system_instruction=system_text,
-        tools=GEMINI_TOOLS if _export_allowed(msgs) else GEMINI_TOOLS_NO_EXPORT,
+        tools=(GEMINI_TOOLS_DOCS if not _wants_schema(user_said) else GEMINI_TOOLS if _export_allowed(msgs) else GEMINI_TOOLS_NO_EXPORT),
         max_output_tokens=4096,
         automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True),
     )
@@ -589,7 +587,10 @@ def _compact_tool_result_for_context(result, max_items=10):
         return result
 
     compacted = dict(result)
-    
+    if isinstance(compacted.get("fields"), dict):
+        compacted["fields"] = {k: v for k, v in compacted["fields"].items()
+                               if not re.search(r"\.(allSelected|select|selected|version)$", k)}
+        
     def _value(g):
         sums= g.get("sums") if isinstance(g, dict) else None
         return next(iter(sums.values()), 0) if isinstance(sums, dict) else 0
