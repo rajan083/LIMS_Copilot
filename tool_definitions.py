@@ -411,6 +411,8 @@ tools = [
                 " The index also contains the E-labs user manual (page-by-page, including"
                 " written descriptions of its screenshots), so use it for how-to and "
                 "'what does this screen/field mean' questions."
+                " This is the default for any single-topic manual or procedure question, including short "
+                "phrases like 'report amendment option'. Use the user's own words as the query, correcting obvious typos."
             ),
             "parameters": {
                 "type": "object",
@@ -455,10 +457,10 @@ tools = [
         "function": {
             "name": "multi_hop_search",
             "description": (
-                "Search the manuals/SOPs for questions that need information from "
-                "more than one place: comparisons, multi-step procedures, or "
-                "questions where one document refers to another. Use "
-                "search_documents instead for simple single-fact lookups."
+                "Use ONLY when answering needs two or more separate topics or documents "
+                "(comparisons, or procedures that span several modules). For a single topic "
+                "such as 'what is X', 'X option' or 'how do I do X', use search_documents instead. "
+                "Pass the user's question in their own words; do not add extra sub-questions."
             ),
             "parameters": {
                 "type": "object",
