@@ -176,7 +176,7 @@ Create a `.env` file in the project folder:
 | Variable | Purpose |
 |---|---|
 | `GEMINI_API_KEY` | Google Gemini API key |
-| `MODEL` | Main Gemini model name (also used for voice transcription) |
+| `MODEL` | Main Gemini model name (also used for voice transcription). Multi-hop search uses its own fixed model set in `multi_hop.py` |
 | `FALLBACK_MODELS` | Optional. Comma-separated models to try if the main one is rate limited or unavailable |
 | `MONGO_URI`, `DB_NAME` | MongoDB connection (use a read-only user) |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` | Outgoing mail account. For Gmail use an app password |
@@ -202,6 +202,8 @@ python rag_pipeline.py
 ```
 
 To convert manual PDFs placed in `manual_sources/` into searchable pages, run `python manual_qa.py`. To rebuild the index from scratch, delete only the `vector_store/` folder and run `rag_pipeline.py` again.
+
+If you change how documents are processed or embedded, you don't need to delete anything. Change `INGEST_VERSION` in `rag_pipeline.py` (for example `okf-5` to `okf-6`) and run `python rag_pipeline.py`. The version is part of each document's hash, so every document is ingested again.
 
 ## Running
 
@@ -350,7 +352,7 @@ The log contains the questions users type and the data returned, so keep it priv
 - Only the last 3 turns are sent.
 - Cached answers skip the model entirely.
 
-Multi-hop search makes two extra model calls, so it costs more than a plain document search. Its tool description tells the model to use it only when the answer needs information from more than one place, and to use plain document search for single-fact lookups.
+Document questions about a single topic use `search_documents`, which is the default. Multi-hop search makes two extra model calls, so it costs more than a plain document search. Its tool description tells the model to use it only when the answer needs information from more than one place, and to use plain document search for single-fact lookups.
 
 ## Security notes
 
@@ -376,7 +378,7 @@ Multi-hop search makes two extra model calls, so it costs more than a plain docu
 ## Troubleshooting
 
 - **API does not start, `KeyError: POWERBI_FEED_BASE_URL`:** add the Power BI variables to `.env`.
-- **Search returns poor or outdated results:** delete `vector_store/` and run `python rag_pipeline.py` again.
+- **Search returns poor or outdated results:** run `python rag_pipeline.py` again. If the documents or the way they are processed changed, bump `INGEST_VERSION` in `rag_pipeline.py` first so everything is re-ingested. As a last resort, delete `vector_store/` and run it again.
 - **Email fails to send:** check the SMTP values in `.env` and restart the app. Gmail needs an app password, not the account password.
 - **A name returns no contact:** check the field names in `CONTACT_SOURCES`. A wrong field name returns no results and no error.
 - **"Access denied" for a user:** check the roles sent in `X-User-Roles` against the tables above.
