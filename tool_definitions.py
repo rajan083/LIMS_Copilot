@@ -1,3 +1,4 @@
+from email_scheduler import SCHEDULER_TOOLS
 tools = [
     {
         "type": "function",
@@ -624,3 +625,4 @@ tools = [
         },
     },
 ]
+tools+= SCHEDULER_TOOLS

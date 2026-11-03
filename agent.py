@@ -14,6 +14,7 @@ from system_prompt import build_system_prompt
 from export_excel import export_excel_file, export_excel_file_multi_sheet
 from export_chart import generate_chart
 from tool_definitions import tools
+from email_scheduler import SCHEDULER_TOOL_NAMES, handle_scheduler_tool 
 from email_report import (note_user_message, note_assistant_message, note_artifact, prepare_report_email)
 from rag_pipeline import (search_documents as run_search_documents, get_cache_stats, learn_if_correction, _looks_like_correction, _pending_turns, _normalize_query)
 from answer_cache import lookup_cached_answer, store_cached_answer
@@ -1001,6 +1002,9 @@ def run_tool_call(function_call, session_id="default", turn_id="", user= None, e
                 subject= args.get("subject", "LIMS report"),
                 body= args.get("body", "PFA Report.")
             )
+        
+        elif name in SCHEDULER_TOOL_NAMES:
+            result= handle_scheduler_tool(name, args, user, roles)
         
         else:
             result = {"error": f"Unknown tool: {name}"}
