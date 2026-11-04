@@ -21,6 +21,7 @@ from email_report import (
 )
 from rag_pipeline import warm_up
 from export_powerbi import register_feed
+import email_scheduler
 
 logger = logging.getLogger("lims.api")
 
@@ -50,6 +51,8 @@ app = FastAPI(
 )
 
 register_feed(app)
+
+email_scheduler.start_in_background()
 
 # ---------------------------------------------------------------- state (in memory)
 _conversations = {}      # (user, conv_id) -> {"messages", "lock", "updated"}
@@ -142,7 +145,6 @@ class MessageIn(BaseModel):
 def health():
     return {"status": "ok"}
 
-
 @app.post("/v1/conversations")
 def create_conversation(user: str = Depends(authenticate), roles= Depends(get_roles)):
     _cleanup()
@@ -154,7 +156,6 @@ def create_conversation(user: str = Depends(authenticate), roles= Depends(get_ro
             "updated": time.time(),
         }
     return {"conversation_id": conv_id}
-
 
 @app.post("/v1/conversations/{conv_id}/messages")
 def send_message(conv_id: str, body: MessageIn, user: str = Depends(authenticate), roles=Depends(get_roles)):
@@ -174,10 +175,10 @@ def send_message(conv_id: str, body: MessageIn, user: str = Depends(authenticate
             "reply": reply,
             "artifacts": _public_artifacts(user, artifacts),
             "pending_email": _public_pending(user, sid),
+            "pending_schedule": email_scheduler.get_pending_job(user),
         }
     finally:
         conv["lock"].release()
-
 
 @app.post("/v1/transcribe")
 async def transcribe(request: Request, user: str= Depends(authenticate)):
@@ -190,8 +191,6 @@ async def transcribe(request: Request, user: str= Depends(authenticate)):
         logger.exception("transcription failed")
         raise HTTPException(502, "Transcription failed")
     return {"text": text.strip()}
-
-
 
 @app.get("/v1/artifacts/{artifact_id}")
 def download_artifact(artifact_id: str, user: str = Depends(authenticate)):
@@ -230,6 +229,24 @@ def delete_conversation(conv_id: str, user: str = Depends(authenticate)):
             raise HTTPException(404, "Conversation not found")
     clear_session(_session_id(user, conv_id))
     return {"ok": True}
+
+
+@app.post("/v1/conversations/{conv_id}/schedule/confirm")
+def schedule_confirm(conv_id: str, user: str = Depends(authenticate), roles=Depends(get_roles)):
+    if roles is not None and not (set(roles) & TOOL_ROLES["schedule_report_email"]):
+        raise HTTPException(403, "Your role is not allowed to schedule reports")
+    _get_conv(user, conv_id)
+    return email_scheduler.confirm_pending(user)     # {"ok": ..., "message": ...}
+
+@app.post("/v1/conversations/{conv_id}/schedule/cancel")
+def schedule_cancel(conv_id: str, user: str = Depends(authenticate)):
+    _get_conv(user, conv_id)
+    email_scheduler.cancel_pending(user)
+    return {"ok": True}
+
+@app.get("/v1/notifications")
+def notifications(user: str = Depends(authenticate)):
+    return {"notifications": email_scheduler.pop_notifications(user)}
 
 
 # ---------------------------------------------------------------- admin (off unless ENABLE_ADMIN_API=1)

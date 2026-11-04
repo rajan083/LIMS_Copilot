@@ -14,7 +14,7 @@ from system_prompt import build_system_prompt
 from export_excel import export_excel_file, export_excel_file_multi_sheet
 from export_chart import generate_chart
 from tool_definitions import tools
-from email_scheduler import SCHEDULER_TOOL_NAMES, handle_scheduler_tool 
+from email_scheduler import SCHEDULER_TOOL_NAMES, handle_scheduler_tool, SCHEDULER_TOOLS
 from email_report import (note_user_message, note_assistant_message, note_artifact, prepare_report_email)
 from rag_pipeline import (search_documents as run_search_documents, get_cache_stats, learn_if_correction, _looks_like_correction, _pending_turns, _normalize_query)
 from answer_cache import lookup_cached_answer, store_cached_answer
@@ -24,6 +24,8 @@ from mongo_discovery import build_schema_catalog, get_shallow_summary, describe_
 from mongo_query import (query_collection as run_query_collection, distinct_values as run_distinct_values, MAX_RESULTS, first_or_last_by_field as run_first_or_last_by_field,
     analyze_parameter_durations as run_analyze_parameter_durations, count_by_field as run_count_by_field, sum_by_field as run_sum_by_field,)
 
+
+tools = tools + SCHEDULER_TOOLS      # always defined here; _tools_for() decides when they are sent to the model
 
 load_dotenv()
 
@@ -63,16 +65,29 @@ EXPORT_WORDS = re.compile(r"\b(export\w*|excel|xlsx|spreadsheet|sheets?|csv|down
 
 YES_WORDS = re.compile(r"^\s*(yes|yeah|yep|sure|ok|okay|please do|go ahead|do it)\b", re.I)
 
+SCHEDULE_TOOLS = set(SCHEDULER_TOOL_NAMES)
+
+SCHEDULE_WORDS = re.compile(
+    r"\b(schedul\w*|recurring|send\s+(it\s+|this\s+|that\s+|the\s+report\s+)?later|"
+    r"every\s+(day|week|month|morning|evening|mon|tues?|wed(nes)?|thu(rs)?|fri|sat(ur)?|sun)\w*|"
+    r"(daily|weekly|monthly)\s+(report|email|mail)|auto-?(send|email|mail)|"
+    r"in\s+\d+\s+(minutes?|mins?|hours?|hrs?)|"
+    r"\d{1,2}(:\d{2})?\s*(am|pm)|\d{1,2}:\d{2}|"
+    r"tomorrow|tonight|next\s+(week|month|mon|tues?|wed|thu|fri|sat|sun)\w*|"
+    r"(at|on)\s+\d{1,2}\s*(o'?clock)?)\b", re.I)
+
 COLLECTION_ROLES= {
     "el_orders": {"lab", "accounts", "admin"},
     "el_order_test_parameter": {"lab", "admin"},
     "app_invoice": {"accounts", "admin"},
 }
 EXPORT_ROLES= {'accounts', 'lab', 'admin'}
+SCHEDULE_ROLES= {'accounts', 'admin'}
 TOOL_ROLES= {
     "prepare_report_email": {"accounts", "admin"},
     "cache_stats": {"admin"},
     **{t: EXPORT_ROLES for t in EXPORT_TOOLS},
+    **{t: SCHEDULE_ROLES for t in SCHEDULE_TOOLS},
 }
 
 
@@ -101,6 +116,11 @@ def _export_allowed(msgs):
     if not texts:
         return False
     return bool(EXPORT_WORDS.search(" ".join(texts)) or YES_WORDS.search(texts[-1]))
+
+
+def _schedule_allowed(msgs):
+    texts = _user_texts(msgs)[-3:]          # a little more room: scheduling often needs a clarifying turn
+    return bool(texts) and bool(SCHEDULE_WORDS.search(" ".join(texts)))
 
 _HOWTO_RE= re.compile(
     r"\b(how (do|can|to|should)|where (do|can|is)|manual|screen|button|menu|navigate)\b",
@@ -132,16 +152,17 @@ logger = logging.getLogger("lims.agent")
 
 
 def _to_gemini_tools(openai_tools):
-    declarations = []
+    declarations, seen = [], set()
     for t in openai_tools:
         fn = t["function"]
-        declarations.append(
-            types.FunctionDeclaration(
-                name=fn["name"],
-                description=fn.get("description", ""),
-                parameters_json_schema=fn.get("parameters") or {"type": "object", "properties": {}},
-            )
-        )
+        if fn["name"] in seen:
+            continue
+        seen.add(fn["name"])
+        declarations.append(types.FunctionDeclaration(
+            name=fn["name"],
+            description=fn.get("description", ""),
+            parameters_json_schema=fn.get("parameters") or {"type": "object", "properties": {}},
+        ))
     return [types.Tool(function_declarations=declarations)]
 
 
@@ -242,8 +263,21 @@ DOC_TOOLS = {"search_documents", "multi_hop_search", "describe_field", "list_col
 _STUB = {"note": "Earlier results of this tool were removed. Call it again if needed"}
 
 GEMINI_TOOLS = _to_gemini_tools(tools)
-GEMINI_TOOLS_NO_EXPORT= _to_gemini_tools([t for t in tools if t['function']['name'] not in EXPORT_TOOLS])
+GEMINI_TOOLS_NO_SCHEDULE= _to_gemini_tools([t for t in tools if t['function']['name'] not in SCHEDULE_TOOLS])
+GEMINI_TOOLS_NO_EXPORT= _to_gemini_tools([t for t in tools if t['function']['name'] not in EXPORT_TOOLS | SCHEDULE_TOOLS])
 GEMINI_TOOLS_DOCS = _to_gemini_tools([t for t in tools if t['function']['name'] in DOC_TOOLS])
+
+
+def _tools_for(msgs, user_said):
+    """Which tool definitions to send. Export and scheduling tools cost tokens on every call,
+    so they are offered only when the conversation is about a file or a schedule."""
+    if not _wants_schema(user_said):
+        return GEMINI_TOOLS_DOCS
+    if _schedule_allowed(msgs):
+        return GEMINI_TOOLS                  # scheduling needs the export tools' arguments too
+    if _export_allowed(msgs):
+        return GEMINI_TOOLS_NO_SCHEDULE
+    return GEMINI_TOOLS_NO_EXPORT
 
 def _stub_old_doc_results(msgs):
     """Replace document-search results from PREVIOUS turns with a stub.
@@ -328,7 +362,7 @@ def _call_llm(msgs, trim=True, max_retries=3, allow_tools=True, model=None):
         system_text += ("\n\nCollections and their top-level fields (already loaded, so do not call list_collections):\n" + schema)    
     config_kwargs = dict(
         system_instruction=system_text,
-        tools=(GEMINI_TOOLS_DOCS if not _wants_schema(user_said) else GEMINI_TOOLS if _export_allowed(msgs) else GEMINI_TOOLS_NO_EXPORT),
+        tools=_tools_for(msgs, user_said),
         max_output_tokens=4096,
         automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True),
     )
@@ -1002,9 +1036,8 @@ def run_tool_call(function_call, session_id="default", turn_id="", user= None, e
                 subject= args.get("subject", "LIMS report"),
                 body= args.get("body", "PFA Report.")
             )
-        
         elif name in SCHEDULER_TOOL_NAMES:
-            result= handle_scheduler_tool(name, args, user, roles)
+            result= handle_scheduler_tool(name, args, user, roles, session_id)
         
         else:
             result = {"error": f"Unknown tool: {name}"}
@@ -1046,10 +1079,10 @@ def handle_turn(messages, content, session_id="default", user= None, roles= None
     
     prev = _pending_turns.get(session_id)
     is_repeat = bool(prev) and _normalize_query(prev["question"]) == _normalize_query(content)
-    use_cache = (not is_repeat) and in_standalone_question(content) and "@" not in content and not EXPORT_WORDS.search(content)
+    use_cache = (not is_repeat) and in_standalone_question(content) and "@" not in content and not EXPORT_WORDS.search(content) and not SCHEDULE_WORDS.search(content)
 
     if not use_cache:
-        reason = "repeat of the previous question" if is_repeat else "export request" if EXPORT_WORDS.search(content) else "not a standalone question"
+        reason = "repeat of the previous question" if is_repeat else "export request" if EXPORT_WORDS.search(content) else "schedule request" if SCHEDULE_WORDS.search(content) else "not a standalone question"
         logger.info(f"[{session_id}|{turn_id}] [answer_cache] SKIPPED ({reason})")
 
     if use_cache:
@@ -1100,6 +1133,7 @@ def handle_turn(messages, content, session_id="default", user= None, roles= None
 
         response_parts = []
         email_ready= False
+        schedule_summary= None
         
         for fc in function_calls:
             tools_used.add(fc.name)
@@ -1110,10 +1144,13 @@ def handle_turn(messages, content, session_id="default", user= None, roles= None
             response_parts.append(_function_response_part(fc, result))
             if isinstance(result, dict) and result.get("status") == "awaiting_user_confirmation":
                 email_ready= True
+                if fc.name == "schedule_report_email":
+                    schedule_summary= result.get("summary")
         messages.append(types.Content(role="user", parts=response_parts))
 
         if email_ready:
-            reply= "The files are ready, Please confirm below to send."
+            reply= (f"Ready to schedule: {schedule_summary} Please confirm below." if schedule_summary
+                    else "The files are ready, Please confirm below to send.")
             note_assistant_message(session_id, reply)
             messages.append(_model_text(reply))
             learn_if_correction(session_id, content, reply)
