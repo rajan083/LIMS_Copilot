@@ -1,160 +1,99 @@
 # LIMS Copilot
 
-An AI assistant for a Laboratory Information Management System (LIMS). Users ask questions in plain language and the Copilot answers from live LIMS data and from the company's manuals and procedures. It can also build Excel, PDF, chart and Power BI outputs, take voice input, and email a generated report after the user confirms.
+An AI assistant for a Laboratory Information Management System (LIMS). Users ask questions in plain language and the Copilot answers from live LIMS data (MongoDB) and from the company's manuals and procedures. It can build Excel, PDF, chart and Power BI exports, accept voice input, and email or schedule reports after the user confirms. Access is controlled by user role.
+
+Built with Python, FastAPI and Google Gemini (tool calling), with a Chroma vector store for the manuals.
 
 It can be used in three ways:
 
-- **Streamlit chat app** (`app.py`) for local use and testing, with voice input.
-- **Terminal chat** (`main.py`) with typed or voice input.
-- **HTTP API** (`api.py`) so a portal or any other application can embed it.
+- **Embedded chat** in a web portal. An Angular chat component talks to the HTTP API through the portal's server.
+- **HTTP API** (`api.py`) for any other application.
+- **Streamlit app** (`app.py`) for local use and testing.
 
 ## What it can do
 
 | Capability | How it works |
-|---|---|
-| Answer questions from LIMS data | The model calls read-only query tools over MongoDB (list, filter, count, sum, first/last, parameter durations) |
+| --- | --- |
+| Answer questions from LIMS data | The model calls read-only query tools over MongoDB: list, filter, distinct values, count, sum, first/last, parameter durations |
 | Answer "how do I..." questions | Semantic search over the manuals and procedure documents (RAG), plus multi-hop search for questions that need several lookups |
-| Export to Excel | Single-sheet, multi-sheet, joined and summary exports; nested records are split into linked sheets |
-| Export to PDF | Three layouts: `table`, `profile` (one client, order or invoice) and `cards` (one text block per record, no table). Optional de-duplication for unique lists. Limited to 300 rows (ReportLab) |
-| PDF from chat text | A definition or explanation already in the chat (for example from the manual) can be turned into a formatted PDF with headings, bullets and bold text |
-| Charts | bar, horizontal bar, stacked bar, line, area, pie, donut, scatter, histogram. PNG (works offline) or interactive HTML |
-| Power BI | Creates a `.pbids` file that points to a signed, expiring CSV feed. Power BI refreshes from live data |
+| Export to Excel | Single-sheet, multi-sheet, joined and summary exports. Nested records are split into linked sheets |
+| Export to PDF | Record tables or plain-text documents |
+| Charts | PNG (works offline) or interactive HTML |
+| Power BI | Power BI file export, plus a data feed registered by `export_powerbi.register_feed` |
+| Voice input | The browser records audio and the API transcribes it (and translates it to English if needed) |
 | Email a report | The user asks, the Copilot prepares the email, and nothing is sent until the user clicks **Send** |
-| Voice input | Audio is transcribed (and translated to English) by Gemini, with a local Whisper fallback |
-| Role-based access | The calling application passes the user's roles; collections, exports and email are restricted by role |
-| Answer cache | Standalone questions are answered from a cache when an earlier question means the same thing, even if worded differently. Small typos also match when the text is almost identical. A cache hit skips the model call completely |
+| Scheduled emails | Send a report later, or on a repeat. The user confirms once, then a background worker sends it automatically and a confirmation appears in the chat |
+| Role-based access | Collections, export tools, email and scheduling are limited by the user's role |
+| Answer cache | Standalone questions that closely match an earlier question are answered from the cache, which saves model calls |
 | Learning from corrections | When the user corrects an answer, the correction is stored and used later |
 
 ## How it works
 
 ```
 User message
-   ↓
+   |
 Checks (needs earlier context? cached answer available?)
-   ↓
-Gemini model  ←→  Tools
-                   ├─ MongoDB queries (read-only, role-checked)
-                   ├─ Document search / multi-hop search
-                   ├─ Excel, PDF, chart and Power BI export
-                   └─ prepare_report_email (prepare only, never sends)
-   ↓
-Reply + generated files + pending email (if any)
-   ↓
-User confirms the email → email_report.confirm_and_send
+   |
+Gemini model  <->  Tools
+                    |- MongoDB queries (read-only, limited by role)
+                    |- Document search / multi-hop search
+                    |- Excel, PDF, chart and Power BI export
+                    |- prepare_report_email   (prepare only, never sends)
+                    '- schedule_report_email  (saves a draft only)
+   |
+Reply + generated files + pending email / pending schedule
+   |
+User clicks Send / Schedule  ->  confirm endpoint
+   |
+Background worker (every 30 s) builds the report with fresh data and sends it
+   |
+A notification is saved; the chat picks it up and shows "sent"
 ```
 
-Data access is read-only and limited to the collections listed in `ALLOWED_COLLECTIONS` in `agent.py` (`el_orders`, `el_order_test_parameter`, `app_invoice`).
+Tools are offered to the model only when they are relevant, to save tokens: export tools when the conversation mentions a file or export, scheduling tools when it mentions scheduling or a time.
 
-## Request-to-response workflow
+## Roles
 
-This is the path of one API request through the code. The Streamlit app and terminal chat call `new_conversation()` and `handle_turn()` directly, so they skip the HTTP and authentication steps.
+The calling application sends the user's roles in the `X-User-Roles` header (comma separated). Supported roles are `lab`, `accounts` and `admin`.
 
-### 1. Startup (once)
+| Resource | Allowed roles |
+| --- | --- |
+| `el_orders` collection | lab, accounts, admin |
+| `el_order_test_parameter` collection | lab, admin |
+| `app_invoice` collection | accounts, admin |
+| Export tools (Excel, PDF, chart, Power BI) | lab, accounts, admin |
+| `prepare_report_email` | accounts, admin |
+| Scheduling tools | accounts, admin |
+| `cache_stats` | admin |
 
-1. `api.py` calls `keystore.init()` to open the API-key database.
-2. `warm_up()` loads the embedding model (`all-MiniLM-L6-v2`) and the Chroma collection, so the first real question is not slow.
-3. Importing `agent.py` runs `build_schema_catalog(ALLOWED_COLLECTIONS)`, which samples MongoDB documents to learn the fields.
-4. `register_feed(app)` adds the `/powerbi/feed.csv` route.
+Data access is read-only and limited to the collections listed in `ALLOWED_COLLECTIONS` in `agent.py`. The model also gets only the schema of the collections the user's role may read.
 
-### 2. Start a conversation: `POST /v1/conversations`
-
-1. `authenticate()` checks `X-API-Key` with `keystore.verify_key()` (hash lookup; rejects unknown, expired or revoked keys), validates `X-User-Id`, and builds the user as `<app_name>:<user_id>`, so users from different applications never collide.
-2. `get_roles()` reads the optional `X-User-Roles` header (comma-separated).
-3. `new_conversation(roles)` creates the message list: the system prompt from `build_system_prompt()` plus the schema of only the collections those roles may see.
-4. The API stores the conversation in memory and returns `conversation_id`.
-
-### 3. Send a message: `POST /v1/conversations/{id}/messages`
-
-1. `authenticate()` and `get_roles()` run again. `_get_conv()` returns 404 unless the conversation belongs to this user.
-2. A per-conversation lock allows one turn at a time (409 if the previous message is still running).
-3. `handle_turn()` runs the steps below.
-
-```
-handle_turn(messages, text, session_id, user, roles)
- │
- ├─ 1. note_user_message()                       (kept for the email feature)
- ├─ 2. Fresh chat + text that needs earlier context
- │       → ask the user to clarify, stop
- ├─ 3. Answer cache (standalone, non-repeated, non-export questions only)
- │       lookup_cached_answer(): drop filler words → embed → Chroma query (top 3)
- │       hit if similarity ≥ threshold, or ≥ 0.50 and the text is ≥ 93% identical
- │       (typos); expired entries are skipped → return, no model call
- ├─ 4. _call_llm(messages)
- │       trim to the last 3 turns, replace old results of document search,
- │       describe_field and list_collections with a stub,
- │       add the schema to the system text (skipped for "how do I..." questions),
- │       offer only the document tools for "how do I..." questions; otherwise offer
- │       export tools only if this or the previous message asks for a file,
- │       generate_content with automatic function calling disabled,
- │       retry on rate limit / server errors, then try FALLBACK_MODELS
- ├─ 5. Tool loop (maximum 12 rounds)
- │       for each function call the model returns:
- │         run_tool_call()
- │           a. role checks: TOOL_ROLES and COLLECTION_ROLES → "Access denied"
- │           b. export gate (export_ok, worked out once per turn): this or the previous
-│              user message mentions a file or export word, or this one is a short "yes"
- │           c. dispatch to the tool (table below)
- │         the result goes back to the model, then _call_llm() runs again
- │       • prepare_report_email returns "awaiting_user_confirmation"
- │         → reply "files are ready, confirm below" and stop
- │       • 12 rounds reached → one last call with tools disabled
- ├─ 6. Empty reply → up to 2 retries, then a fallback message
- ├─ 7. store_cached_answer(), only if the turn used only document search,
- │       created no files, was not an export request, and started a fresh conversation
- └─ 8. note_assistant_message(), learn_if_correction()
-```
-
-4. Back in `api.py`, `_public_artifacts()` replaces server file paths with random download IDs (paths are never sent to the client) and `_public_pending()` adds the email draft, if any.
-5. The response is `{reply, artifacts[], pending_email}`.
-
-### 4. What each tool calls
-
-| Tool | Internal path |
-|---|---|
-| `list_collections`, `describe_field`, `distinct_values`, `query_collection`, `count_by_field`, `sum_by_field`, `first_or_last_by_field`, `analyze_parameter_durations` | `mongo_query.*` → `db.py` (read-only MongoDB) |
-| `export_records_to_excel`, `export_joined_records_to_excel`, `export_summary_to_excel` | `_fetch_records` → `mongo_query` → `_build_normalized_export` / `_apply_columns` → `export_excel` → `.xlsx` artifact |
-| `export_records_to_pdf` | `_fetch_records` → `_apply_columns` (with `dedupe`) or `_build_normalized_export` → `create_pdf` (`export_pdf.py`) → `.pdf` artifact |
-| `export_text_to_pdf` | `create_text_pdf` (`export_pdf.py`) → `.pdf` artifact. Takes a title and text from the chat, not database records |
-| `generate_chart` | `export_chart.generate_chart` → PNG or HTML artifact |
-| `create_powerbi_file` | `sign_spec()` → `.pbids` artifact pointing to `/powerbi/feed.csv?t=<token>`. When Power BI refreshes, `verify_token()` → `fetch_rows()` → `rows_to_csv()` |
-| `search_documents` | `rag_pipeline.search_documents` → search cache. On a miss: embed the query → Chroma query → relevance filter → `_fetch_related` (linked documents) |
-| `multi_hop_search` | `_decompose` (model) → `_retrieve` → `_find_gaps` (model) → `_retrieve` → merged, ranked chunks |
-| `prepare_report_email` | `email_report`: resolve the recipient, validate attachments, store a pending email |
-| `cache_stats` | `get_cache_stats` (admin only) |
-
-### 5. Other API calls in the same flow
-
-- **Download a file:** `GET /v1/artifacts/{id}` checks the file belongs to this user, then returns it.
-- **Send the email:** `POST .../email/confirm` checks the role, then `confirm_and_send()` applies the hourly limit, calls `_smtp_send()`, and appends to `email_audit.jsonl`.
-- **Cancel the email:** `POST .../email/cancel`.
-- **Voice:** `POST /v1/transcribe` runs `transcribe_bytes()`: Gemini first (with retries and fallback models), then local Whisper.
-- **Cleanup:** conversations and files idle for 2 hours are dropped, or end one with `DELETE /v1/conversations/{id}`.
+**Important:** if the `X-User-Roles` header is missing, no role restriction is applied. The calling application must always send it.
 
 ## Project structure
 
 | File / folder | Purpose |
-|---|---|
-| `app.py` | Streamlit chat interface with voice input |
-| `main.py` | Terminal chat (type, or `/v` for voice) |
-| `api.py` | FastAPI service for other applications |
-| `agent.py` | Conversation loop: model calls, tool dispatch, role checks, caching, history trimming, transcription |
+| --- | --- |
+| `api.py` | FastAPI service: conversations, files, email and schedule confirmation, voice, notifications, API keys |
+| `app.py` | Streamlit chat interface |
+| `agent.py` | Conversation loop: model calls and fallbacks, tool dispatch, role checks, caching, history trimming, voice transcription |
 | `system_prompt.py` | System prompt for the model |
 | `tool_definitions.py` | Tool schemas the model can call |
 | `db.py` | MongoDB connection |
 | `mongo_discovery.py` | Builds the schema catalog from sample documents |
 | `mongo_query.py` | Query, count, sum, duration and first/last tools |
-| `rag_pipeline.py` | Ingests documents and searches them; stores corrections |
+| `rag_pipeline.py` | Ingests documents, searches them, stores corrections |
 | `multi_hop.py` | Multi-step document search |
 | `answer_cache.py` | Answer cache lookup and storage |
-| `manual_qa.py` | Turns manual PDFs in `manual_sources/` into per-page documents in `documents/manuals/` using the model |
-| `schema_docs.py` | Generates schema documents for the allowed collections |
-| `export_excel.py`, `export_pdf.py`, `export_chart.py` | Excel, PDF (table, profile and cards layouts, and text PDFs) and chart generation |
-| `export_powerbi.py` | Signed Power BI feed and `.pbids` file creation |
+| `export_excel.py`, `export_pdf.py`, `export_chart.py`, `export_powerbi.py` | File generation |
 | `email_report.py` | Contact lookup, email preparation, sending, audit log |
+| `email_scheduler.py` | Scheduled and repeating report emails, background sender, notifications |
 | `keystore.py` | API key creation, hashing, verification and revocation |
 | `documents/`, `manual_sources/` | Source manuals and schema notes (not in Git) |
 | `vector_store/`, `cache/` | Generated search index and caches (not in Git) |
 | `exports/`, `charts/` | Generated reports (not in Git) |
+
+The Angular front end is a separate project. Its chat component, `copilot.service.ts` and `wav.util.ts` live there.
 
 ## Setup
 
@@ -165,33 +104,27 @@ python -m venv .venv
 .venv\Scripts\activate            # Windows
 # source .venv/bin/activate       # macOS / Linux
 pip install -r requirements.txt
+pip install croniter              # needed by email_scheduler.py
 ```
 
-PDF export uses `reportlab` and PNG charts use `kaleido`; both are listed in `requirements.txt`.
-
-Optional: to print symbols such as the rupee sign in PDFs, put `DejaVuSans.ttf` and `DejaVuSans-Bold.ttf` in a `fonts/` folder next to `export_pdf.py`. Without them the PDFs use Helvetica.
-
-Create a `.env` file in the project folder:
+Copy `.env.example` to `.env` and fill it in:
 
 | Variable | Purpose |
-|---|---|
+| --- | --- |
 | `GEMINI_API_KEY` | Google Gemini API key |
-| `MODEL` | Main Gemini model name (also used for voice transcription). Multi-hop search uses its own fixed model set in `multi_hop.py` |
-| `FALLBACK_MODELS` | Optional. Comma-separated models to try if the main one is rate limited or unavailable |
-| `MONGO_URI`, `DB_NAME` | MongoDB connection (use a read-only user) |
+| `MODEL` | Primary Gemini model name |
+| `FALLBACK_MODELS` | Optional. Comma-separated models to try if the primary is busy, rate limited or unavailable |
+| `MONGO_URI`, `DB_NAME` | MongoDB connection for the LIMS data (use a read-only user) |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` | Outgoing mail account. For Gmail use an app password |
 | `INTERNAL_DOMAIN` | Optional. Company domain, used to flag external recipients |
-| `MAX_ATTACH_MB` | Optional. Maximum email attachment size in MB (default 20) |
-| `POWERBI_FEED_BASE_URL` | Public base URL of this API as Power BI will reach it (required at startup) |
-| `POWERBI_FEED_SECRET` | Secret used to sign Power BI feed links |
-| `POWERBI_TOKEN_TTL_DAYS` | Optional. How long a Power BI link stays valid (default 30) |
-| `ADMIN_API_KEY`, `ENABLE_ADMIN_API` | Enable the `/admin/keys` endpoints (set `ENABLE_ADMIN_API=1` and a key) |
-| `ENABLE_DOCS` | Optional. Set to `1` to serve `/docs` (keep off in production) |
+| `ADMIN_API_KEY` | Master key for managing API keys. Needed only if `ENABLE_ADMIN_API=1` |
+| `ENABLE_ADMIN_API` | Optional. `1` turns on the `/admin/keys` endpoints (off by default) |
+| `ENABLE_DOCS` | Optional. `1` turns on `/docs` (keep off in production) |
 | `KEYSTORE_PATH` | Optional. Location of the API key database (default `api_keys.db`) |
+| `SCHEDULER_DB_NAME` | Optional. Database that stores scheduled jobs and notifications. Defaults to the LIMS database. It must be writable, so point it at a separate database if the LIMS user is read-only |
+| `SCHEDULER_TZ` | Optional. Time zone for scheduled times (default `Asia/Kolkata`) |
 
 Never commit `.env`.
-
-Note: `api.py` imports `export_powerbi`, which reads `POWERBI_FEED_BASE_URL` at import time, so the API will not start without it.
 
 ### Build the document index
 
@@ -201,23 +134,9 @@ Put the manuals and schema notes in `documents/` (and `manual_sources/` if used)
 python rag_pipeline.py
 ```
 
-To convert manual PDFs placed in `manual_sources/` into searchable pages, run `python manual_qa.py`. To rebuild the index from scratch, delete only the `vector_store/` folder and run `rag_pipeline.py` again.
-
-If you change how documents are processed or embedded, you don't need to delete anything. Change `INGEST_VERSION` in `rag_pipeline.py` (for example `okf-5` to `okf-6`) and run `python rag_pipeline.py`. The version is part of each document's hash, so every document is ingested again.
+To rebuild from scratch, delete only the `vector_store/` folder and run it again.
 
 ## Running
-
-**Streamlit app:**
-
-```
-streamlit run app.py
-```
-
-**Terminal chat:**
-
-```
-python main.py
-```
 
 **API:**
 
@@ -225,7 +144,13 @@ python main.py
 uvicorn api:app --host 0.0.0.0 --port 8000
 ```
 
-Run the API as a single worker for now: conversations and email state are held in memory.
+Run the API as a single worker for now: conversations and pending emails are held in memory. Starting the API also starts the scheduled-email worker.
+
+**Streamlit app:**
+
+```
+streamlit run app.py
+```
 
 ## Using the API
 
@@ -242,24 +167,26 @@ The key is shown once when created. Only its hash is stored.
 Every request needs these headers:
 
 - `X-API-Key`: the key for the calling application.
-- `X-User-Id`: the logged-in user, set by the calling application's server.
-- `X-User-Roles`: comma-separated roles of that user, for example `accounts` or `lab,admin`. **Always send it.** If it is missing, no role restrictions are applied.
+- `X-User-Id`: the logged-in user, set by the calling application's server. Users are namespaced by application, for example `portal:user-1`.
+- `X-User-Roles`: the user's roles, for example `accounts,lab`. Always send it (see Roles above).
 
 | Method | Path | Purpose |
-|---|---|---|
+| --- | --- | --- |
 | `POST` | `/v1/conversations` | Start a conversation |
-| `POST` | `/v1/conversations/{id}/messages` | Send a message; returns the reply, files and any pending email |
-| `POST` | `/v1/transcribe` | Send raw WAV audio (up to 5 MB); returns the transcript |
+| `POST` | `/v1/conversations/{id}/messages` | Send a message. Returns the reply, files, `pending_email` and `pending_schedule` |
+| `POST` | `/v1/transcribe` | Send a WAV recording (16 kHz, up to 5 MB). Returns `{"text": "..."}` |
 | `GET` | `/v1/artifacts/{id}` | Download a generated file |
-| `GET` | `/v1/conversations/{id}/email/pending` | Show the pending email, if any |
+| `GET` | `/v1/conversations/{id}/email/pending` | Read the pending email |
 | `POST` | `/v1/conversations/{id}/email/confirm` | The user clicked Send |
 | `POST` | `/v1/conversations/{id}/email/cancel` | The user clicked Cancel |
+| `POST` | `/v1/conversations/{id}/schedule/confirm` | The user clicked Schedule |
+| `POST` | `/v1/conversations/{id}/schedule/cancel` | The user cancelled the schedule |
+| `GET` | `/v1/notifications` | Messages from the background worker, such as "scheduled email sent". Each is returned once |
 | `DELETE` | `/v1/conversations/{id}` | End a conversation |
 | `GET` | `/health` | Uptime check |
-| `GET` | `/powerbi/feed.csv?t=<token>` | Live data for a Power BI file (signed link, no API key) |
-| `POST`, `GET`, `DELETE` | `/admin/keys` | Manage API keys (needs `X-Admin-Key`) |
+| `POST`, `GET`, `DELETE` | `/admin/keys` | Manage API keys (needs `X-Admin-Key`, only when enabled) |
 
-A request can take 20 to 60 seconds, so use a client timeout of at least 120 seconds. Messages are limited to 4000 characters.
+Limits: messages up to 4,000 characters, and idle conversations (and their files) are dropped after 2 hours. A request can take 20 to 60 seconds, so use a client timeout of at least 120 seconds.
 
 Example:
 
@@ -273,118 +200,76 @@ curl -X POST http://localhost:8000/v1/conversations/<id>/messages \
   -d '{"message": "how many orders were received last month?"}'
 ```
 
-The calling application's **server** holds the API key. Do not put it in browser code.
+The calling application's **server** holds the API key. Do not put it in browser code. For the Angular front end, call a proxy (the dev proxy, or the portal's backend) that adds the three headers.
 
-## Roles and permissions
+## Voice input
 
-The calling application decides who the user is and sends their roles. The Copilot enforces these rules:
-
-| Collection | Roles allowed |
-|---|---|
-| `el_orders` | `lab`, `accounts`, `admin` |
-| `el_order_test_parameter` | `lab`, `admin` |
-| `app_invoice` | `accounts`, `admin` |
-
-| Action | Roles allowed |
-|---|---|
-| Excel, PDF (records and text) and Power BI exports | `accounts`, `lab`, `admin` |
-| Prepare and send report email | `accounts`, `admin` |
-| Cache statistics | `admin` |
-
-A user without the right role gets an "Access denied" result, and the model is told not to look for another way to the data. The schema shown to the model also leaves out collections the user cannot access. Roles are defined in `COLLECTION_ROLES`, `EXPORT_ROLES` and `TOOL_ROLES` in `agent.py`.
+The browser records audio and converts it to 16 kHz WAV, then sends it to `/v1/transcribe`. The server transcribes it with Gemini (trying the fallback models if needed) and, if that fails, with a local Whisper model. Speech in other languages is translated to English. The text is put in the input box so the user can edit it before sending.
 
 ## Emailing reports
 
-1. The user generates a report (Excel, PDF or chart) and asks to email it.
-2. The recipient can be:
-   - an email address the user typed in the chat, or
-   - a name, looked up in the contact collections listed in `CONTACT_SOURCES` in `email_report.py`.
-3. The Copilot prepares the email and shows a confirmation with the address, file, subject and message.
-4. Nothing is sent until the user confirms. Each send is written to `email_audit.jsonl`, and there is a limit of 10 emails per user per hour.
+1. The user generates a report and asks to email it.
+2. The recipient is either an address the user typed in the chat, or a name looked up in the contact collections listed in `CONTACT_SOURCES` in `email_report.py`.
+3. The Copilot prepares the email and shows a confirmation with the address, file, subject and message. External addresses and addresses the user did not type are flagged.
+4. Nothing is sent until the user clicks **Send**. Each send is written to an audit log, and there is a per-user hourly limit.
 
 Rules built into the code: only files generated in the current conversation can be attached, and the model cannot send to an address the user did not type or that was not found in the contacts.
 
-## PDF output
+## Scheduled emails
 
-Two tools create PDFs, both with a coloured title block, the generation time, and page numbers on every page.
+Example requests:
 
-**`export_records_to_pdf`** builds a PDF from a database query. Pick the layout by what you ask for:
+- "Send this report to name@company.com at 2 pm today"
+- "Email me last month's invoices every Monday at 9"
+- "Do I have any scheduled emails?"
+- "Cancel the weekly one"
 
-| Layout | Use it for | Page |
-|---|---|---|
-| `table` | A plain list of records | Landscape |
-| `profile` | The details of ONE client, order or invoice. Fields that are the same in every record are printed as `Label: value` lines, the rest go in a table | Portrait |
-| `cards` | Details of several records as text, not a table. One block per record, the first column is the heading, and empty values (`0`, `NA`) are hidden | Portrait |
+How it works:
 
-Set `dedupe` to true for a unique list. Client details come from order records, so without it each client appears once per order. Rows are only removed when every selected column is identical.
+1. The model calls `schedule_report_email`, which only saves a **draft** and shows a confirmation card in the chat.
+2. When the user clicks **Schedule**, the job becomes active.
+3. A background worker checks every 30 seconds. At the due time it rebuilds the report with fresh data and emails it.
+4. A notification is saved, and the chat shows it within about a minute.
 
-Examples: "give me all the details of all the clients in a pdf as text, not a table" uses `cards` with `dedupe`.
+Details:
 
-**`export_text_to_pdf`** turns text that is already in the chat into a formatted PDF. The model can use `## Heading`, `- bullet` lines and `**bold**`. Example: "give me the definition of app resource list in a pdf".
-
-If a PDF tool call fails, the model is told not to switch layouts on its own, but to say what failed and ask.
-
-## Power BI
-
-1. The user asks for a Power BI file. The Copilot creates a `.pbids` file.
-2. The user opens it in Power BI Desktop and chooses **Anonymous** if asked.
-3. Power BI reads `/powerbi/feed.csv?t=<token>`. The token contains the query (records, count or sum), is signed with `POWERBI_FEED_SECRET`, and expires after `POWERBI_TOKEN_TTL_DAYS`.
-
-Anyone who has the link can read that data until it expires, so treat `.pbids` files like the data itself.
-
-## Logging and token usage
-
-Everything is logged to `lims_copilot.log` (UTF-8) and the terminal:
-
-- `[tokens]` lines: input and output tokens for every model call, and a `TURN TOTAL` per message.
-- `[tool_call]` and `[tool_result]` lines: which tool was called, with which arguments, and what came back.
-- `[answer_cache]` lines: `HIT` (with similarity and text ratio), `MISS` (with the nearest question), `STORED` or `SKIPPED` and why.
-- `[multi_hop] tokens` lines: the extra model calls inside multi-hop search. These are **not** included in `TURN TOTAL`.
-
-The log contains the questions users type and the data returned, so keep it private. `*.log` is in `.gitignore`, so it is not committed.
-
-**Where the tokens go.** Each model call resends the system prompt, the schema and the tool definitions, so that fixed part is most of the cost of a request. To keep it down:
-
-- "How do I..." questions get only the document tools, and no database schema.
-- Export tools are offered only when the user asks for a file.
-- Old results of document search, `describe_field` and `list_collections` are replaced by a short note in later turns.
-- The `describe_field` result leaves out bookkeeping fields (`allSelected`, `select`, `selected`, `version`).
-- Only the last 3 turns are sent.
-- Cached answers skip the model entirely.
-
-Document questions about a single topic use `search_documents`, which is the default. Multi-hop search makes two extra model calls, so it costs more than a plain document search. Its tool description tells the model to use it only when the answer needs information from more than one place, and to use plain document search for single-fact lookups.
+- **Timing:** exactly one of `run_at` (a date and time), `in_minutes`, or `cron` (5 fields, for example `0 9 * * 1` for Mondays at 9:00). Repeating jobs can run at most once a day.
+- **Moving date ranges:** a repeating report uses presets instead of fixed dates: `today`, `yesterday`, `last_7_days`, `last_30_days`, `last_week`, `month_to_date`, `last_month`.
+- **Reports that can be scheduled:** Excel (records, joined, summary) and PDF records.
+- **Limits:** 10 active jobs per user, a draft expires after 60 minutes, a one-time job more than 24 hours late is not sent, and a repeating job stops after 3 failures in a row.
+- **Roles:** `accounts` and `admin` only.
+- **Storage:** jobs are saved in the `scheduled_emails` collection and notifications in `scheduler_notifications`, in `SCHEDULER_DB_NAME` or the LIMS database. This is the only part of the system that writes to MongoDB.
+- **The worker only runs while the API runs.** If the server is down at the due time, a repeating job runs once when it is back, and a one-time job that is more than 24 hours late is dropped.
+- **Management:** the model can list, pause, resume and cancel a user's scheduled emails.
 
 ## Security notes
 
-- Database access is read-only, and only the listed collections are exposed to the model.
-- Role checks run on every tool call, not only in the prompt.
+- Database access to LIMS data is read-only, and only the listed collections are exposed to the model.
 - The contact collections are not exposed to the query tools.
 - API keys are stored hashed, can expire, and can be revoked.
-- Emails require an explicit confirmation step.
-- Power BI links are signed and expire, but they do not use the API key.
-- If `X-User-Roles` is not sent, role restrictions are skipped. The calling application must always send it.
+- Roles limit which collections, tools, emails and schedules a user can use. Send `X-User-Roles` on every request.
+- Emails and schedules require an explicit confirmation step.
+- Scheduled jobs are re-checked against the owner's role each time they run.
 - Keep the API on an internal network, behind HTTPS.
-- Roles limit which collections a user can reach, but results are not yet filtered by branch, department or customer.
+- Reports are not yet filtered by branch, department or customer. Until they are, only give a role to people who may see all the data in the collections it unlocks.
 
 ## Known limitations and planned work
 
 - Conversations, generated-file records and pending emails are held in memory. Move them to Redis or a database before running several workers.
-- Filtering of query results by branch, department or customer.
-- Defaulting to no access when roles are missing.
-- Scheduled and automatic report sending.
+- Filtering of query results by branch, department and customer.
 - Streaming responses.
-- A unique client list is built from order records, so near-duplicates stay separate (for example the same client with a different name suffix, or `NA`, `na` and `zzs` as the GST value). Reading from a clients collection, or cleaning those entries, would give a more exact list.
+- Notifications are polled by the chat every 20 seconds. Server-sent events or WebSockets would make them instant.
 
 ## Troubleshooting
 
-- **API does not start, `KeyError: POWERBI_FEED_BASE_URL`:** add the Power BI variables to `.env`.
-- **Search returns poor or outdated results:** run `python rag_pipeline.py` again. If the documents or the way they are processed changed, bump `INGEST_VERSION` in `rag_pipeline.py` first so everything is re-ingested. As a last resort, delete `vector_store/` and run it again.
+- **Search returns poor or outdated results:** delete `vector_store/` and run `python rag_pipeline.py` again.
 - **Email fails to send:** check the SMTP values in `.env` and restart the app. Gmail needs an app password, not the account password.
 - **A name returns no contact:** check the field names in `CONTACT_SOURCES`. A wrong field name returns no results and no error.
-- **"Access denied" for a user:** check the roles sent in `X-User-Roles` against the tables above.
 - **API returns 401:** the key is wrong, expired or revoked.
+- **API returns 403:** the user's role is not allowed to do that.
 - **API returns 409:** the previous message in that conversation is still being processed.
-- **PDF export fails with `ModuleNotFoundError: reportlab`:** run `pip install -r requirements.txt` again.
-- **A PDF shows a table when you wanted text:** ask for it "as text, not a table". The model then uses the `cards` layout.
-- **Symbols like the rupee sign show as boxes in a PDF:** add the DejaVu fonts to a `fonts/` folder (see Setup).
-- **Voice transcription is slow:** the Gemini call failed and the local Whisper model is being used.
+- **`400 INVALID_ARGUMENT: Duplicate function declaration found: <tool>`:** the same tool name appears twice in the tool list sent to Gemini. Look for a tool defined in `tool_definitions.py` and also added from `email_scheduler.SCHEDULER_TOOLS`.
+- **"Send at 2 pm" sends immediately instead of scheduling:** the scheduling tools are only offered to the model when the message matches `SCHEDULE_WORDS` in `agent.py`. Add patterns for clock times (for example `\d{1,2}(:\d{2})?\s*(am|pm)`) and words such as `tomorrow`.
+- **`ModuleNotFoundError: croniter`:** run `pip install croniter`.
+- **Scheduled email was sent but no message appeared in the chat:** the chat polls `/v1/notifications`. Check that the endpoint uses the same authentication as the other routes. A notification is saved under the same user id the job was created with, and it is returned only to that user.
+- **Scheduled jobs are not saved:** the database user is read-only. Set `SCHEDULER_DB_NAME` to a database it can write to.
