@@ -96,6 +96,19 @@ def _allowed_collections(roles):
         return tuple(ALLOWED_COLLECTIONS)
     return tuple(c for c in ALLOWED_COLLECTIONS if set(roles or ()) & COLLECTION_ROLES.get(c, set()))
 
+def _collections_in(args):
+    """Every value of a 'collection_name' key, at any depth."""
+    found = set()
+    if isinstance(args, dict):
+        for k, v in args.items():
+            if k == "collection_name" and isinstance(v, str):
+                found.add(v)
+            else:
+                found |= _collections_in(v)
+    elif isinstance(args, list):
+        for item in args:
+            found |= _collections_in(item)
+    return found
 
 def _catalog_for(names):
     return {k: v for k,v in SCHEMA_CATALOG.items() if k in names}
@@ -671,7 +684,7 @@ def run_tool_call(function_call, session_id="default", turn_id="", user= None, e
         logger.info(f"{tag}[tool_call] {name} args={json.dumps(args, indent=2, default=str)}")
         
         allowed= _allowed_collections(roles)
-        blocked= [] if roles is None else [c for c in ALLOWED_COLLECTIONS if c not in allowed and c in json.dumps(args)]
+        blocked = [] if roles is None else sorted(c for c in _collections_in(args) if c not in allowed)
         tool_roles= TOOL_ROLES.get(name)
         no_tool= roles is not None and tool_roles is not None and not (set(roles or ()) & tool_roles)
         
